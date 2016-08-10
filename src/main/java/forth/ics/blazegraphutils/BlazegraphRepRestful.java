@@ -1,5 +1,33 @@
 package forth.ics.blazegraphutils;
 
+import static forth.ics.blazegraphutils.BlazegraphRepLocal.loadProperties;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+
+import javax.ws.rs.client.AsyncInvoker;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.InvocationCallback;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.http.client.ClientProtocolException;
+import org.json.JSONObject;
+import org.json.XML;
+import org.openrdf.model.Statement;
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.rio.RDFFormat;
+
+import java.util.concurrent.Future;
+
 /**
  * Client usage sample for the Blazegraph Restful Service
  * 
@@ -7,43 +35,42 @@ package forth.ics.blazegraphutils;
  */
 import com.bigdata.rdf.sail.webapp.SD;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
-import static forth.ics.blazegraphutils.BlazegraphRepLocal.loadProperties;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Properties;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
-import org.json.JSONObject;
-import org.json.XML;
-
-import org.apache.http.client.ClientProtocolException;
-import org.openrdf.model.Statement;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.rio.RDFFormat;
 
 public class BlazegraphRepRestful {
 
     //private RemoteRepositoryManager repository;
     private String serviceUrl;
+    private Client clientPool;
 
     public BlazegraphRepRestful(String serviceUrl) throws IOException {
         this.serviceUrl = serviceUrl;
     }
+    
+    public BlazegraphRepRestful(String serviceUrl, Client clientPool) throws IOException {
+        this.serviceUrl = serviceUrl;
+        this.clientPool = clientPool;
+    }
 
-    /**
-     * Imports an RDF like file on the server
+    public String getServiceUrl() {
+		return serviceUrl;
+	}
+	public void setServiceUrl(String serviceUrl) {
+		this.serviceUrl = serviceUrl;
+	}
+
+	public Client getClientPool() {
+		return clientPool;
+	}
+	public void setClientPool(Client clientPool) {
+		this.clientPool = clientPool;
+	}
+
+	/**
+     * Imports an RDF like file on the server using post synchronously
      *
      * @param file A String holding the path of the file, the contents of which
      * will be uploaded.
-     * @param format
+     * @param format	The RDF format
      * @param namespace A String representation of the nameSpace
      * @param namedGraph A String representation of the nameGraph
      * @return A response from the service.
@@ -67,7 +94,79 @@ public class BlazegraphRepRestful {
         Response response = webTarget.request().post(Entity.entity(new File(file), mimeType));// .form(form));
         return response;
     }
+    
+    /**
+     * Imports an RDF like file on the server using post asynchronously
+     *
+     * @param file A String holding the path of the file, the contents of which
+     * will be uploaded.
+     * @param format	The RDF format
+     * @param namespace A String representation of the nameSpace
+     * @param namedGraph A String representation of the nameGraph
+     * @return A response from the service.
+     */
+    public void importFileAsync(String file, RDFFormat format, String nameSpace, String nameGraph)
+			throws ClientProtocolException, IOException, InterruptedException, ExecutionException {
+		
+		String responseStr = "";
 
+		String restURL = serviceUrl + "/namespace/" + nameSpace;// + "/sparql?context-uri=" + nameGraph
+
+		// Taking into account nameSpace in the construction of the URL
+		if (nameSpace != null)
+			restURL = serviceUrl + "/namespace/" + nameSpace + "/sparql";
+		else
+			restURL = serviceUrl + "/sparql";
+
+		// Taking into account nameGraph in the construction of the URL
+		if (nameGraph != null)
+			restURL = restURL + "?context-uri=" + nameGraph;
+
+		System.out.println(restURL);
+						
+		WebTarget webTarget = clientPool.target(restURL).queryParam("context-uri", nameGraph);
+		
+		AsyncInvoker asyncInvoker = webTarget.request().async();
+		String mimeType = fetchDataImportMimeType(format);
+		
+		final Future<String> entityFuture = asyncInvoker.post(Entity.entity(new File(file), mimeType), 
+				new InvocationCallback<String>() {
+		            @Override
+		            public void completed(String response) {
+		                System.out.println("Response entity '" + response + "' received.");
+		            }
+		 
+		            @Override
+		            public void failed(Throwable throwable) {
+		                System.out.println("Invocation failed.");
+		                throwable.printStackTrace();
+		            }
+		            
+		        });
+		
+    }
+    
+    // This is still in test 
+    public String restPostBulkImportRDF() throws ClientProtocolException, IOException {
+
+		String responseStr = "";
+		
+		//serviceUrl = http://139.91.183.88:9999/blazegraph
+		String restURL = serviceUrl + "/dataloader";
+		System.out.println(restURL);
+
+		Client client = ClientBuilder.newClient(); 
+		WebTarget webTarget = client.target(restURL);
+
+		Response response = webTarget.request().post(Entity.entity(new File("C:/Workspaces/vre4eicWorkspace/blazegraph-sesame-local/src/main/resources/bulkload.xml"), MediaType.APPLICATION_XML));
+		responseStr = response.readEntity(String.class);
+		
+		System.out.println(response);
+		
+		return responseStr;
+
+	}
+    
     public void deleteNamespace(String namespace) throws Exception {
         if (namespaceExists(namespace)) {
             RemoteRepositoryManager repository = new RemoteRepositoryManager(serviceUrl, false);
