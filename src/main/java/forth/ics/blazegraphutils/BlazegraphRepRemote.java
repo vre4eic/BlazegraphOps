@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.Properties;
 import org.openrdf.model.Statement;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
@@ -153,7 +154,7 @@ public class BlazegraphRepRemote {
         RDFWriter writer = Rio.createWriter(format, new OutputStreamWriter(new FileOutputStream(new File(filename))));
     }
 
-    public TupleQueryResult executeSparqlQuery(String sparql, String namespace) throws Exception {
+    public TupleQueryResult executeSPARQLQuery(String sparql, String namespace) throws Exception {
         if (!namespaceExists(namespace)) {
             System.out.println("Namespace: " + namespace + " was not found. ");
             return null;
@@ -164,9 +165,24 @@ public class BlazegraphRepRemote {
         }
     }
 
-    public long triplesNum(String namespace) throws Exception {
+    public void executeSPARULQuery(String sparul, String namespace) throws Exception {
+        if (!namespaceExists(namespace)) {
+            System.out.println("Namespace: " + namespace + " was not found. ");
+        } else {
+            repository.getRepositoryForNamespace(namespace)
+                    .prepareUpdate(sparul).evaluate();
+        }
+    }
+
+    public long triplesNum(String namespace, String graph) throws Exception {
         long result = 0;
-        TupleQueryResult res = executeSparqlQuery("select (count(*) as ?num) where { ?s ?p ?o . }", namespace);
+        String graphClause = "";
+        if (graph != null) {
+            graphClause = "from <" + graph + ">";
+        }
+        String query = "select (count(*) as ?num) " + graphClause + " where { ?s ?p ?o . }";
+
+        TupleQueryResult res = executeSPARQLQuery(query, namespace);
         while (res.hasNext()) {
             BindingSet set = res.next();
             result = Long.parseLong(set.getValue("num").stringValue());
@@ -184,12 +200,16 @@ public class BlazegraphRepRemote {
         int start = queryTmp.indexOf(" ");
         StringBuilder sb = new StringBuilder();
         sb.append(query.substring(0, start)).append(" (count(*) as ?triples) ").append(query.substring(end));
-        TupleQueryResult res = executeSparqlQuery(sb.toString(), namespace);
+        TupleQueryResult res = executeSPARQLQuery(sb.toString(), namespace);
         while (res.hasNext()) {
             result = Long.parseLong(res.next().getValue("triples").stringValue());
         }
         res.close();
         return result;
+    }
+
+    public void clearGraphContents(String namespace, String graph) throws Exception {
+        repository.getRepositoryForNamespace(namespace).prepareUpdate("CLEAR GRAPH <" + graph + ">").evaluate();
     }
 
     public void importDatasetTest(String filename, RDFFormat format, String namespace, int runs) throws Exception {
@@ -209,7 +229,7 @@ public class BlazegraphRepRemote {
             System.out.println(curDur);
             duration += curDur;
         }
-        System.out.println(namespace + "\t" + triplesNum(namespace) + "\t" + (duration / runs));
+        System.out.println(namespace + "\t" + triplesNum(namespace, null) + "\t" + (duration / runs));
         System.out.println("----");
     }
 
@@ -233,7 +253,8 @@ public class BlazegraphRepRemote {
 //        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/03. med-small", RDFFormat.NTRIPLES, "lifewatch_medium_small", runs);
 //        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/04. med-large", RDFFormat.NTRIPLES, "lifewatch_medium_large", runs);
 //        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/05. large", RDFFormat.NTRIPLES, "lifewatch_large", runs);
-        String namespace = "resttest";
+        String namespace = "cidoc-3_2_1";
+        String graph = "http://cidoc/3.2.1";
 
 //        for (File file : new File("C:/RdfData/LifeWatchGreece_Queries").listFiles()) {
 //            String query = readData(file.getAbsolutePath());
@@ -242,7 +263,12 @@ public class BlazegraphRepRemote {
 //            blaze.countSparqlResults(query, namespace);
 //            System.out.println(file.getName() + "\t" + (System.currentTimeMillis() - start) + "\t" + blaze.countSparqlResults(query, namespace));
 //        }
+        System.out.println("triples: " + blaze.triplesNum(namespace, graph));
+        blaze.clearGraphContents(namespace, graph);
+        System.out.println("triples: " + blaze.triplesNum(namespace, graph));
+
         blaze.terminate();
+
     }
 
     public static String readData(String filename) {

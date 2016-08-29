@@ -43,13 +43,12 @@ public class TestBlazegraphRest {
     }
 
     public static void main(String[] args) throws Exception {
-        //BlazegraphRepRestful blaze = new BlazegraphRepRestful("/config/quads.properties", "http://139.91.183.88:9999/blazegraph/sparql");
-
         int runs = 10;
         String propFile = "/config/quads.properties";
         String service = "http://83.212.97.61:9999/blazegraph";
+        BlazegraphRepRestful blaze = new BlazegraphRepRestful(service);
 
-//        ImportDatasetTest(propFile, service, "C:/RdfData/cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, "http://cidoc/3.2.1", "cidoc-3_2_1", 1);
+        ImportDatasetTest(propFile, service, "C:/RdfData/cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, "http://cidoc/3.2.1", "cidoc-3_2_1", 1);
 //        blaze.importDatasetTest("/config/quads.properties","C:/RdfData/_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "http://efo/2.48", "efo-2_48", runs);
 //        blaze.importDatasetTest("/config/quads.properties","C:/RdfData/EFO - 2.68.owl", RDFFormat.RDFXML, "http://efo/2.68", "efo-2_68", runs);
 //        blaze.importDatasetTest("/config/quads.properties","C:/RdfData/EFO - 2.691.owl", RDFFormat.RDFXML, "http://efo/2.691", "efo-2_691", runs);
@@ -66,7 +65,6 @@ public class TestBlazegraphRest {
 //        JSONObject xmlJSONObj = XML.toJSONObject(response.readEntity(String.class));
 //        System.out.println(xmlJSONObj);
 //        System.out.println(System.currentTimeMillis() - start);
-        String namespace = "lifewatch_large";
 //        for (File file : new File("C:\\Dropbox\\Shared Netbeans Projects\\Forth Projects\\VirtuosoOps\\input\\LifeWatchGreece_Queries").listFiles()) {
 //            String query = BlazegraphRepRemote.readData(file.getAbsolutePath());
 //            long start = System.currentTimeMillis();
@@ -75,12 +73,13 @@ public class TestBlazegraphRest {
 //            System.out.println(file.getName() + "\t" + (System.currentTimeMillis() - start) + "\t" + blaze.countSparqlResults(query, namespace));
 //        }
 //        Response response = blaze.clearGraphContent("http://cidoc/3.2.1", "cidoc-3_2_1");
-
 //        Response response = blaze.clearGraphContent("http://cidoc/3.2.1", "cidoc-3_2_1");
 //        System.out.println(response.readEntity(String.class));
 //        blaze.deleteNamespace("efo-2_48");
 //        new BlazegraphRepRestful(service).deleteNamespace("efo-2_48");
-        new BlazegraphRepRestful(service).createNamespace("/config/quads.properties", "efo-2_48");
+//        blaze.createNamespace("/config/quads.properties", "test-namespace");
+
+//        blaze.executeSparqlUpdateQuery("insert data into <http://test> {<http://a> rdf:type rdfs:Class. }", "test-namespace");
 
     }
 }

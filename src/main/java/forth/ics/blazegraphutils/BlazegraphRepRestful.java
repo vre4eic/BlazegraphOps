@@ -38,34 +38,35 @@ import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 
 public class BlazegraphRepRestful {
 
-    //private RemoteRepositoryManager repository;
     private String serviceUrl;
     private Client clientPool;
 
     public BlazegraphRepRestful(String serviceUrl) throws IOException {
         this.serviceUrl = serviceUrl;
     }
-    
+
     public BlazegraphRepRestful(String serviceUrl, Client clientPool) throws IOException {
         this.serviceUrl = serviceUrl;
         this.clientPool = clientPool;
     }
 
     public String getServiceUrl() {
-		return serviceUrl;
-	}
-	public void setServiceUrl(String serviceUrl) {
-		this.serviceUrl = serviceUrl;
-	}
+        return serviceUrl;
+    }
 
-	public Client getClientPool() {
-		return clientPool;
-	}
-	public void setClientPool(Client clientPool) {
-		this.clientPool = clientPool;
-	}
+    public void setServiceUrl(String serviceUrl) {
+        this.serviceUrl = serviceUrl;
+    }
 
-	/**
+    public Client getClientPool() {
+        return clientPool;
+    }
+
+    public void setClientPool(Client clientPool) {
+        this.clientPool = clientPool;
+    }
+
+    /**
      * Imports an RDF like file on the server using post synchronously
      *
      * @param file A String holding the path of the file, the contents of which
@@ -94,7 +95,7 @@ public class BlazegraphRepRestful {
         Response response = webTarget.request().post(Entity.entity(new File(file), mimeType));// .form(form));
         return response;
     }
-    
+
     /**
      * Imports an RDF like file on the server using post asynchronously
      *
@@ -106,67 +107,69 @@ public class BlazegraphRepRestful {
      * @return A response from the service.
      */
     public void importFileAsync(String file, RDFFormat format, String nameSpace, String nameGraph)
-			throws ClientProtocolException, IOException, InterruptedException, ExecutionException {
-		
-		String responseStr = "";
+            throws ClientProtocolException, IOException, InterruptedException, ExecutionException {
 
-		String restURL = serviceUrl + "/namespace/" + nameSpace;// + "/sparql?context-uri=" + nameGraph
+        String responseStr = "";
 
-		// Taking into account nameSpace in the construction of the URL
-		if (nameSpace != null)
-			restURL = serviceUrl + "/namespace/" + nameSpace + "/sparql";
-		else
-			restURL = serviceUrl + "/sparql";
+        String restURL = serviceUrl + "/namespace/" + nameSpace;// + "/sparql?context-uri=" + nameGraph
 
-		// Taking into account nameGraph in the construction of the URL
-		if (nameGraph != null)
-			restURL = restURL + "?context-uri=" + nameGraph;
+        // Taking into account nameSpace in the construction of the URL
+        if (nameSpace != null) {
+            restURL = serviceUrl + "/namespace/" + nameSpace + "/sparql";
+        } else {
+            restURL = serviceUrl + "/sparql";
+        }
 
-		System.out.println(restURL);
-						
-		WebTarget webTarget = clientPool.target(restURL).queryParam("context-uri", nameGraph);
-		
-		AsyncInvoker asyncInvoker = webTarget.request().async();
-		String mimeType = fetchDataImportMimeType(format);
-		
-		final Future<String> entityFuture = asyncInvoker.post(Entity.entity(new File(file), mimeType), 
-				new InvocationCallback<String>() {
-		            @Override
-		            public void completed(String response) {
-		                System.out.println("Response entity '" + response + "' received.");
-		            }
-		 
-		            @Override
-		            public void failed(Throwable throwable) {
-		                System.out.println("Invocation failed.");
-		                throwable.printStackTrace();
-		            }
-		            
-		        });
-		
+        // Taking into account nameGraph in the construction of the URL
+        if (nameGraph != null) {
+            restURL = restURL + "?context-uri=" + nameGraph;
+        }
+
+        System.out.println(restURL);
+
+        WebTarget webTarget = clientPool.target(restURL).queryParam("context-uri", nameGraph);
+
+        AsyncInvoker asyncInvoker = webTarget.request().async();
+        String mimeType = fetchDataImportMimeType(format);
+
+        final Future<String> entityFuture = asyncInvoker.post(Entity.entity(new File(file), mimeType),
+                new InvocationCallback<String>() {
+                    @Override
+                    public void completed(String response) {
+                        System.out.println("Response entity '" + response + "' received.");
+                    }
+
+                    @Override
+                    public void failed(Throwable throwable) {
+                        System.out.println("Invocation failed.");
+                        throwable.printStackTrace();
+                    }
+
+                });
+
     }
-    
+
     // This is still in test 
     public String restPostBulkImportRDF() throws ClientProtocolException, IOException {
 
-		String responseStr = "";
-		
-		//serviceUrl = http://139.91.183.88:9999/blazegraph
-		String restURL = serviceUrl + "/dataloader";
-		System.out.println(restURL);
+        String responseStr = "";
 
-		Client client = ClientBuilder.newClient(); 
-		WebTarget webTarget = client.target(restURL);
+        //serviceUrl = http://139.91.183.88:9999/blazegraph
+        String restURL = serviceUrl + "/dataloader";
+        System.out.println(restURL);
 
-		Response response = webTarget.request().post(Entity.entity(new File("C:/Workspaces/vre4eicWorkspace/blazegraph-sesame-local/src/main/resources/bulkload.xml"), MediaType.APPLICATION_XML));
-		responseStr = response.readEntity(String.class);
-		
-		System.out.println(response);
-		
-		return responseStr;
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(restURL);
 
-	}
-    
+        Response response = webTarget.request().post(Entity.entity(new File("C:/Workspaces/vre4eicWorkspace/blazegraph-sesame-local/src/main/resources/bulkload.xml"), MediaType.APPLICATION_XML));
+        responseStr = response.readEntity(String.class);
+
+        System.out.println(response);
+
+        return responseStr;
+
+    }
+
     public void deleteNamespace(String namespace) throws Exception {
         if (namespaceExists(namespace)) {
             RemoteRepositoryManager repository = new RemoteRepositoryManager(serviceUrl, false);
@@ -205,7 +208,7 @@ public class BlazegraphRepRestful {
         return false;
     }
 
-    public Response clearGraphContent(String graph, String namespace) throws UnsupportedEncodingException {
+    public Response clearGraphContents(String graph, String namespace) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
                 .queryParam("c", URLEncoder.encode("<" + graph + ">", "UTF-8").replaceAll("\\+", "%20"));
@@ -243,6 +246,15 @@ public class BlazegraphRepRestful {
                 .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
         String mimetype = fetchQueryResultMimeType(format);
         Invocation.Builder invocationBuilder = webTarget.request(mimetype);
+        Response response = invocationBuilder.get();
+        return response;
+    }
+    
+    public Response executeSparqlUpdateQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
+                .queryParam("update", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
+        Invocation.Builder invocationBuilder = webTarget.request();
         Response response = invocationBuilder.get();
         return response;
     }
