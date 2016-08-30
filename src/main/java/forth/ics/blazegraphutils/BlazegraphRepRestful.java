@@ -250,6 +250,78 @@ public class BlazegraphRepRestful {
         return response;
     }
     
+    /**
+     * Executes synchronously an update based on query
+     *
+     * @param queryStr A String that holds the query to be submitted on the server.
+     * @param namespace A String representation of the nameSpace to be used
+     * @return The response of the update request
+     */
+    public Response executeUpdateSparqlQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
+        
+    	String restURL = serviceUrl + "/namespace/" + namespace;
+        // Taking into account nameSpace in the construction of the URL
+        if (namespace != null) {
+            restURL = serviceUrl + "/namespace/" + namespace + "/sparql";
+        } else {
+            restURL = serviceUrl + "/sparql";
+        }
+        System.out.println(restURL);
+        
+    	Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(restURL);
+        String contentType = "application/sparql-update";
+        Invocation.Builder invocationBuilder = webTarget.request(contentType);
+        Response response = invocationBuilder.post(Entity.entity(queryStr, contentType));
+        return response;
+    }
+    
+    /**
+     * Executes asynchronously an update based on query
+     *
+     * @param queryStr A String that holds the query to be submitted on the server.
+     * @param namespace A String representation of the nameSpace to be used
+     * @return The response of the update request
+     */
+    public void executeAsyncUpdateSparqlQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
+        
+    	String restURL = serviceUrl + "/namespace/" + namespace;
+        // Taking into account nameSpace in the construction of the URL
+        if (namespace != null) {
+            restURL = serviceUrl + "/namespace/" + namespace + "/sparql";
+        } else {
+            restURL = serviceUrl + "/sparql";
+        }
+        System.out.println(restURL);
+        
+        WebTarget webTarget = clientPool.target(restURL);
+        AsyncInvoker asyncInvoker = webTarget.request().async();
+        String contentType = "application/sparql-update";
+        
+        final Future<String> entityFuture = asyncInvoker.post(Entity.entity(queryStr, contentType),
+            new InvocationCallback<String>() {
+                @Override
+                public void completed(String response) {
+                    System.out.println("Response entity '" + response + "' received.");
+                }
+
+                @Override
+                public void failed(Throwable throwable) {
+                    System.out.println("Invocation failed.");
+                    throwable.printStackTrace();
+                }
+
+            });
+
+    }
+    
+    
+    
+    
+    
+    
+    
+    // What is it? does it even work?
     public Response executeSparqlUpdateQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
