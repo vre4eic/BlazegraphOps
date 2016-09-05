@@ -239,7 +239,7 @@ public class BlazegraphRepRemote {
         BlazegraphRepRemote blaze = new BlazegraphRepRemote("/config/quads.properties", serviceUrl);
         int runs = 5;
         //real data
-//        blaze.importDatasetTest("C:/RdfData/cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, "cidoc-3_2_1", runs);
+//        blaze.importDatasetTest("C:/RdfData/cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, "cidoc-3_2_1", 1);
 //        blaze.importDatasetTest("C:/RdfData/_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "efo-2_48", runs);
 //        blaze.importDatasetTest("C:/RdfData/EFO - 2.68.owl", RDFFormat.RDFXML, "efo-2_68", runs);
 //        blaze.importDatasetTest("C:/RdfData/EFO - 2.691.owl", RDFFormat.RDFXML, "efo-2_691", runs);
@@ -264,8 +264,8 @@ public class BlazegraphRepRemote {
 //            System.out.println(file.getName() + "\t" + (System.currentTimeMillis() - start) + "\t" + blaze.countSparqlResults(query, namespace));
 //        }
         System.out.println("triples: " + blaze.triplesNum(namespace, graph));
-        blaze.clearGraphContents(namespace, graph);
-        System.out.println("triples: " + blaze.triplesNum(namespace, graph));
+//        blaze.clearGraphContents(namespace, graph);
+//        System.out.println("triples: " + blaze.triplesNum(namespace, graph));
 
         blaze.terminate();
 
