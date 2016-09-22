@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.Properties;
 import org.openrdf.model.Statement;
-import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
@@ -210,65 +209,6 @@ public class BlazegraphRepRemote {
 
     public void clearGraphContents(String namespace, String graph) throws Exception {
         repository.getRepositoryForNamespace(namespace).prepareUpdate("CLEAR GRAPH <" + graph + ">").evaluate();
-    }
-
-    public void importDatasetTest(String filename, RDFFormat format, String namespace, int runs) throws Exception {
-        long duration = 0;
-        System.out.println("-- " + namespace + " --");
-        for (int i = 0; i < runs; i++) {
-            System.out.print("[run: " + i + "] ");
-            deleteNamespace(namespace);
-            createNamespace(namespace);
-            long start = System.currentTimeMillis();
-            if (new File(filename).isDirectory()) {
-                importFolder(filename, format, namespace);
-            } else {
-                importFile(filename, format, namespace);
-            }
-            long curDur = System.currentTimeMillis() - start;
-            System.out.println(curDur);
-            duration += curDur;
-        }
-        System.out.println(namespace + "\t" + triplesNum(namespace, null) + "\t" + (duration / runs));
-        System.out.println("----");
-    }
-
-    public static void main(String[] args) throws Exception {
-        String serviceUrl = "http://83.212.97.61:9999/blazegraph";
-//        serviceUrl = "http://139.91.183.48:9999/blazegraph";
-        BlazegraphRepRemote blaze = new BlazegraphRepRemote("/config/quads.properties", serviceUrl);
-        int runs = 5;
-        //real data
-//        blaze.importDatasetTest("C:/RdfData/cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, "cidoc-3_2_1", 1);
-//        blaze.importDatasetTest("C:/RdfData/_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "efo-2_48", runs);
-//        blaze.importDatasetTest("C:/RdfData/EFO - 2.68.owl", RDFFormat.RDFXML, "efo-2_68", runs);
-//        blaze.importDatasetTest("C:/RdfData/EFO - 2.691.owl", RDFFormat.RDFXML, "efo-2_691", runs);
-//        blaze.importDatasetTest("C:/RdfData/Worms", RDFFormat.TURTLE, "worms", runs);
-//        blaze.importDatasetTest("C:/RdfData/Fishbase", RDFFormat.TURTLE, "fishbase", runs);
-//        blaze.importDatasetTest("C:/RdfData/Lifewatch", RDFFormat.NTRIPLES, "lifewatch", runs);
-
-        //synthetic data
-//        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/01. very small", RDFFormat.NTRIPLES, "lifewatch_very_small", runs);
-//        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/02. small", RDFFormat.NTRIPLES, "lifewatch_small", runs);
-//        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/03. med-small", RDFFormat.NTRIPLES, "lifewatch_medium_small", runs);
-//        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/04. med-large", RDFFormat.NTRIPLES, "lifewatch_medium_large", runs);
-//        blaze.importDatasetTest("C:/RdfData/LifeWatchSyntheticDatasets/05. large", RDFFormat.NTRIPLES, "lifewatch_large", runs);
-        String namespace = "cidoc-3_2_1";
-        String graph = "http://cidoc/3.2.1";
-
-//        for (File file : new File("C:/RdfData/LifeWatchGreece_Queries").listFiles()) {
-//            String query = readData(file.getAbsolutePath());
-//            long start = System.currentTimeMillis();
-////            blaze.executeSparqlQuery(query, namespace);
-//            blaze.countSparqlResults(query, namespace);
-//            System.out.println(file.getName() + "\t" + (System.currentTimeMillis() - start) + "\t" + blaze.countSparqlResults(query, namespace));
-//        }
-        System.out.println("triples: " + blaze.triplesNum(namespace, graph));
-//        blaze.clearGraphContents(namespace, graph);
-//        System.out.println("triples: " + blaze.triplesNum(namespace, graph));
-
-        blaze.terminate();
-
     }
 
     public static String readData(String filename) {

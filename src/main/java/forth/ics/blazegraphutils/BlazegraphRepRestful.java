@@ -222,17 +222,19 @@ public class BlazegraphRepRestful {
         long duration = 0;
         for (File file : new File(folder).listFiles()) {
             if (!file.isDirectory()) {
+                System.out.print("file: " + file.getName() + " .... in ");
                 response = importFile(file.getAbsolutePath(), format, namespace, namedgraph);
                 JSONObject json = XML.toJSONObject(response.readEntity(String.class));
                 long curDur = ((JSONObject) json.get("data")).getLong("milliseconds");
                 duration += curDur;
+                System.out.println(curDur + " ms");
             }
         }
         return duration;
     }
 
     /**
-     * Executes a SPARQL query. 
+     * Executes a SPARQL query.
      *
      * @param queryStr A String that holds the query to be submitted on the
      * server.

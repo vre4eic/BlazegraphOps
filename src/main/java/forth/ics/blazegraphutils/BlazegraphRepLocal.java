@@ -21,6 +21,7 @@ import org.openrdf.rio.RDFFormat;
 
 import com.bigdata.rdf.sail.BigdataSail;
 import com.bigdata.rdf.sail.BigdataSailRepository;
+import com.bigdata.rdf.store.DataLoader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -208,9 +209,9 @@ public class BlazegraphRepLocal {
     public static void main(String[] args) throws Exception {
         BlazegraphRepLocal blaze = new BlazegraphRepLocal("/config/quads.properties");
 
-//        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-//        InputStream is = classLoader.getResourceAsStream("LifeWatchDatabase.ttl");
-//        blaze.importFile(is, RDFFormat.NTRIPLES, "http://lifewatch");
+//        blaze.importFile("C:\\RdfData\\_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "http://efo-2.48");
+        System.out.println(blaze.triplesNum("http://efo-2.48"));
+        
 //        InputStream is = classLoader.getResourceAsStream("EFO - 2.691.owl");
 //        blaze.importFile(is, RDFFormat.RDFXML, "http://efo/2.691");
 //        System.out.println("Duration: " + (System.currentTimeMillis() - start));
@@ -221,8 +222,7 @@ public class BlazegraphRepLocal {
 //        blaze.importDatasetTest("input/LifeWatchDatabase.ttl", RDFFormat.TURTLE, "http://lifewatch");
 //        blaze.importDatasetTest("input/Fishbase", RDFFormat.TURTLE, "http://fishbase");
 //        blaze.importDatasetTest("input/Worms", RDFFormat.TURTLE, "http://worms");
-        blaze.importDatasetTest("input/lifewatch5a.nt_fixed", RDFFormat.NTRIPLES, "http://lifewatch");
-
+//        blaze.importDatasetTest("input/lifewatch5a.nt_fixed", RDFFormat.NTRIPLES, "http://lifewatch");       
         blaze.terminate();
     }
 }
