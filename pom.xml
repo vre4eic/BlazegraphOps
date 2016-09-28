@@ -34,7 +34,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>forth.ics.blazegraphutils.DBpediaTest</mainClass>
+                            <mainClass>forth.ics.blazegraphutils.TestBlazegraphRest</mainClass>
                             <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>

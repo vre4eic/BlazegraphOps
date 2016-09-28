@@ -241,6 +241,7 @@ public class BlazegraphRepRestful {
      * @param namespace A String representation of the nameSpace to be used
      * @param format
      * @return The output of the query
+     * @throws java.io.UnsupportedEncodingException
      */
     public Response executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();

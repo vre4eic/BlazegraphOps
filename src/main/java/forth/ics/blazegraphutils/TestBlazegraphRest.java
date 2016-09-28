@@ -6,6 +6,8 @@
 package forth.ics.blazegraphutils;
 
 import java.io.File;
+import java.io.FileReader;
+import java.util.Properties;
 import javax.ws.rs.core.Response;
 import org.json.JSONObject;
 import org.json.XML;
@@ -19,17 +21,17 @@ public class TestBlazegraphRest {
 
     public static void ImportDatasetTest(String properties, String service, String filename, RDFFormat format, String graph, String namespace, int runs) throws Exception {
         long duration = 0;
-        BlazegraphRepRestful blazeRest = new BlazegraphRepRestful(service);
+        BlazegraphRepRestful blaze = new BlazegraphRepRestful(service);
         System.out.println("-- " + graph + " --");
         Response response;
         long min = Long.MAX_VALUE, max = 0;
         for (int i = 0; i < runs; i++) {
             long curDur = 0;
-            blazeRest.clearGraphContents(graph, namespace);
+            blaze.clearGraphContents(graph, namespace);
             if (new File(filename).isDirectory()) {
-                curDur = blazeRest.importFolder(filename, format, namespace, graph);
+                curDur = blaze.importFolder(filename, format, namespace, graph);
             } else {
-                response = blazeRest.importFile(filename, format, namespace, graph);
+                response = blaze.importFile(filename, format, namespace, graph);
                 JSONObject json = XML.toJSONObject(response.readEntity(String.class));
                 curDur = ((JSONObject) json.get("data")).getLong("milliseconds");
             }
@@ -44,7 +46,7 @@ public class TestBlazegraphRest {
         }
         duration = duration - min - max;
         runs -= 2;
-        System.out.println(graph + ": " + blazeRest.triplesNum(graph, namespace) + "\t\t\tDuration: " + duration / runs);
+        System.out.println(graph + ": " + blaze.triplesNum(graph, namespace) + "\t\t\tDuration: " + duration / runs);
         System.out.println("----");
     }
 
@@ -52,38 +54,79 @@ public class TestBlazegraphRest {
         int runs = 5;
         String propFile = "/config/quads.properties";
         String service = "http://139.91.183.40:9999/blazegraph";
-//        service = "http://83.212.97.61:9999/blazegraph";
-        String namespaceRepo = "dbpedia";
-        BlazegraphRepRemote blaze = new BlazegraphRepRemote(propFile, service);
-//        blaze.deleteNamespace(namespaceRepo);
-//        blaze.createNamespace(namespaceRepo);
-//       
-        blaze.terminate();
+        service = "http://83.212.97.61:9999/blazegraph";
 
-//        ImportDatasetTest(propFile, service, "C:/RdfData/cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, "http://cidoc/3.2.1", namespaceRepo, runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "http://efo/2.48", namespaceRepo, runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/EFO - 2.68.owl", RDFFormat.RDFXML, "http://efo/2.68", namespaceRepo, runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/EFO - 2.691.owl", RDFFormat.RDFXML, "http://efo/2.691", namespaceRepo, runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/Lifewatch", RDFFormat.NTRIPLES, "http://lifewatchgreece.com", namespaceRepo, runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/Worms", RDFFormat.TURTLE, "http://worms", namespaceRepo, runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/Fishbase", RDFFormat.TURTLE, "http://fishbase", namespaceRepo, runs);
+        String folder = null;
+        if (args.length == 2) {
+            if (args[0].equals("-path")) {
+                folder = args[1];
+            } else {
+                folder = "C://RdfData";
+            }
+        }
+        String namespace = "quads_repo";
+//        blaze.createNamespace(propFile, namespace);
+//        blaze.deleteNamespace("worms");
+//        ImportDatasetTest(propFile, service, folder + "/cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, "http://cidoc/3.2.1", namespace, runs);
+//        ImportDatasetTest(propFile, service, folder + "/_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "http://efo/2.48", namespace, runs);
+//        ImportDatasetTest(propFile, service, folder + "/EFO - 2.68.owl", RDFFormat.RDFXML, "http://efo/2.68", namespace, runs);
+//        ImportDatasetTest(propFile, service, folder + "/EFO - 2.691.owl", RDFFormat.RDFXML, "http://efo/2.691", namespace, runs);
+//        ImportDatasetTest(propFile, service, folder + "/Lifewatch", RDFFormat.NTRIPLES, "http://lifewatchgreece.com", namespace, runs);
+//        ImportDatasetTest(propFile, service, folder + "/Worms", RDFFormat.TURTLE, "http://worms", namespace, runs);
+//        ImportDatasetTest(propFile, service, folder + "/Fishbase", RDFFormat.TURTLE, "http://fishbase", namespace, runs);
         //synthetic data
-//        ImportDatasetTest(propFile, service, "C:/RdfData/LifeWatchSyntheticDatasets/01. very small", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/vsmall", "lifewatch_very_small", runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/LifeWatchSyntheticDatasets/02. small", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/small", "lifewatch_small", runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/LifeWatchSyntheticDatasets/03. med-small", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/medsmall", "lifewatch_medium_small", runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/LifeWatchSyntheticDatasets/04. med-large", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/medlarge", "lifewatch_medium_large", runs);
-//        ImportDatasetTest(propFile, service, "C:/RdfData/LifeWatchSyntheticDatasets/05. large", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/large", "lifewatch_large", runs);
+        ImportDatasetTest(propFile, service, folder + "/LifeWatchSyntheticDatasets/01. very small", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/vsmall", namespace, runs);
+        ImportDatasetTest(propFile, service, folder + "/LifeWatchSyntheticDatasets/02. small", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/small", namespace, runs);
+        ImportDatasetTest(propFile, service, folder + "/LifeWatchSyntheticDatasets/03. med-small", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/medsmall", namespace, runs);
+        ImportDatasetTest(propFile, service, folder + "/LifeWatchSyntheticDatasets/04. med-large", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/medlarge", namespace, runs);
+        ImportDatasetTest(propFile, service, folder + "/LifeWatchSyntheticDatasets/05. large", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/large", namespace, runs);
 //        long start = System.currentTimeMillis();
-//        JSONObject xmlJSONObj = XML.toJSONObject(response.readEntity(String.class));
-//        System.out.println(xmlJSONObj);
-//        System.out.println(System.currentTimeMillis() - start);
-//        for (File file : new File("C:\\Dropbox\\Shared Netbeans Projects\\Forth Projects\\VirtuosoOps\\input\\LifeWatchGreece_Queries").listFiles()) {
-//            String query = BlazegraphRepRemote.readData(file.getAbsolutePath());
-//            long start = System.currentTimeMillis();
-////            blaze.executeSparqlQuery(query, namespace, QueryResultFormat.JSON);
-//            blaze.countSparqlResults(query, namespace);
-//            System.out.println(file.getName() + "\t" + (System.currentTimeMillis() - start) + "\t" + blaze.countSparqlResults(query, namespace));
-//        }
+        String graph = "http://lifewatchgreece.com";
+        graph = "http://lifewatchgreece.com/large";
+//        String namespaceRepo = "lifewatch";
+//        namespaceRepo = "lifewatch_large";
+//        queryTest(folder, graph, runs, blaze, namespaceRepo);
+    }
+
+    public static void queryTest(String folder, String graph, int runs, BlazegraphRepRestful blaze, String namespaceRepo) throws Exception {
+        for (File file : new File(folder + "/LifeWatchGreece_Queries").listFiles()) {
+            if (file.isDirectory()) {
+                continue;
+            }
+            long duration = 0;
+            long min = Long.MAX_VALUE, max = 0;
+            String query = BlazegraphRepRemote.readData(file.getAbsolutePath());
+            query = query.replace("[namegraph]", "<" + graph + ">");
+            int i;
+//            System.out.println(query);
+            for (i = 0; i < runs; i++) {
+                long start = System.currentTimeMillis();
+//                TupleQueryResult result = graphDB.executeSparqlQuery(query);
+//                while (result.hasNext()) {
+//                    result.next();
+//                }
+//                result.close();
+//                Response resp = blaze.executeSparqlQuery(query, namespaceRepo, QueryResultFormat.CSV);
+//                resp.readEntity(String.class);
+                blaze.countSparqlResults(query, namespaceRepo);
+                long curDur = (System.currentTimeMillis() - start);
+
+                if (min > curDur) {
+                    min = curDur;
+                }
+                if (max < curDur) {
+                    max = curDur;
+                }
+//                System.out.println(curDur);
+                duration += curDur;
+            }
+            duration = duration - min - max;
+            i -= 2;
+//            System.out.println(file.getName() + "\t" + duration / i);
+            System.out.println(file.getName() + "\t" + duration / i);// + "\t" + blaze.countSparqlResults(query, namespaceRepo));
+//            break;
+        }
+
 //        Response response = blaze.clearGraphContent("http://cidoc/3.2.1", "cidoc-3_2_1");
 //        Response response = blaze.clearGraphContent("http://cidoc/3.2.1", "cidoc-3_2_1");
 //        System.out.println(response.readEntity(String.class));
