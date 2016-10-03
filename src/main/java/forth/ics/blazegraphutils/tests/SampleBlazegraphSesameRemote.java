@@ -23,7 +23,7 @@
  * href="http://wiki.blazegraph.com/wiki/index.php/Sesame_API_remote_mode">Sesame
  * API remote mode</a>
  */
-package forth.ics.blazegraphutils;
+package forth.ics.blazegraphutils.tests;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -147,12 +147,10 @@ public class SampleBlazegraphSesameRemote {
      */
     private static JettyResponseListener getNamespaceProperties(
             final RemoteRepositoryManager repo, final String namespace) throws Exception {
-
         final ConnectOptions opts = new ConnectOptions(serviceURL + "/namespace/"
                 + namespace + "/properties");
         opts.method = "GET";
         return repo.doConnect(opts);
-
     }
 
     /*

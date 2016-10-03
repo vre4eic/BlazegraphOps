@@ -30,8 +30,8 @@ import java.util.concurrent.Future;
 
 /**
  * Client usage sample for the Blazegraph Restful Service
- * 
-* @author Vangelis Kritsotakis
+ *
+ * @author Vangelis Kritsotakis
  */
 import com.bigdata.rdf.sail.webapp.SD;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
@@ -89,10 +89,11 @@ public class BlazegraphRepRestful {
         if (namedGraph != null) {
             restURL = restURL + "?context-uri=" + namedGraph;
         }
-        String mimeType = fetchDataImportMimeType(format);
+        String mimeType = Utils.fetchDataImportMimeType(format);
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
         Response response = webTarget.request().post(Entity.entity(new File(file), mimeType));// .form(form));
+        client.close();
         return response;
     }
 
@@ -130,22 +131,22 @@ public class BlazegraphRepRestful {
         WebTarget webTarget = clientPool.target(restURL).queryParam("context-uri", nameGraph);
 
         AsyncInvoker asyncInvoker = webTarget.request().async();
-        String mimeType = fetchDataImportMimeType(format);
+        String mimeType = Utils.fetchDataImportMimeType(format);
 
         final Future<String> entityFuture = asyncInvoker.post(Entity.entity(new File(file), mimeType),
                 new InvocationCallback<String>() {
-                    @Override
-                    public void completed(String response) {
-                        System.out.println("Response entity '" + response + "' received.");
-                    }
+            @Override
+            public void completed(String response) {
+                System.out.println("Response entity '" + response + "' received.");
+            }
 
-                    @Override
-                    public void failed(Throwable throwable) {
-                        System.out.println("Invocation failed.");
-                        throwable.printStackTrace();
-                    }
+            @Override
+            public void failed(Throwable throwable) {
+                System.out.println("Invocation failed.");
+                throwable.printStackTrace();
+            }
 
-                });
+        });
 
     }
 
@@ -214,17 +215,18 @@ public class BlazegraphRepRestful {
                 .queryParam("c", URLEncoder.encode("<" + graph + ">", "UTF-8").replaceAll("\\+", "%20"));
         Invocation.Builder invocationBuilder = webTarget.request();
         Response response = invocationBuilder.delete();
+        client.close();
         return response;
     }
 
     public long importFolder(String folder, RDFFormat format, String namespace, String namedgraph) throws Exception {
-        Response response;
+        String response;
         long duration = 0;
         for (File file : new File(folder).listFiles()) {
             if (!file.isDirectory()) {
                 System.out.print("file: " + file.getName() + " .... in ");
-                response = importFile(file.getAbsolutePath(), format, namespace, namedgraph);
-                JSONObject json = XML.toJSONObject(response.readEntity(String.class));
+                response = importFile(file.getAbsolutePath(), format, namespace, namedgraph).readEntity(String.class);
+                JSONObject json = XML.toJSONObject(response);
                 long curDur = ((JSONObject) json.get("data")).getLong("milliseconds");
                 duration += curDur;
                 System.out.println(curDur + " ms");
@@ -243,14 +245,15 @@ public class BlazegraphRepRestful {
      * @return The output of the query
      * @throws java.io.UnsupportedEncodingException
      */
-    public Response executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
+    public String executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
                 .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
-        String mimetype = fetchQueryResultMimeType(format);
+        String mimetype = Utils.fetchQueryResultMimeType(format);
         Invocation.Builder invocationBuilder = webTarget.request(mimetype);
-        Response response = invocationBuilder.get();
-        return response;
+        String result = invocationBuilder.get().readEntity(String.class);
+        client.close();
+        return result;
     }
 
     /**
@@ -275,6 +278,7 @@ public class BlazegraphRepRestful {
         String contentType = "application/sparql-update";
         Invocation.Builder invocationBuilder = webTarget.request(contentType);
         Response response = invocationBuilder.post(Entity.entity(queryStr, contentType));
+        client.close();
         return response;
     }
 
@@ -300,25 +304,22 @@ public class BlazegraphRepRestful {
         String contentType = "application/sparql-update";
         final Future<String> entityFuture = asyncInvoker.post(Entity.entity(queryStr, contentType),
                 new InvocationCallback<String>() {
-                    @Override
-                    public void completed(String response) {
-                        System.out.println("Response entity '" + response + "' received.");
-                    }
+            @Override
+            public void completed(String response) {
+                System.out.println("Response entity '" + response + "' received.");
+            }
 
-                    @Override
-                    public void failed(Throwable throwable) {
-                        System.out.println("Invocation failed.");
-                        throwable.printStackTrace();
-                    }
-
-                });
-
+            @Override
+            public void failed(Throwable throwable) {
+                System.out.println("Invocation failed.");
+                throwable.printStackTrace();
+            }
+        });
     }
 
     public long triplesNum(String graph, String namespace) throws UnsupportedEncodingException {
         String query = "select (count(*) as ?count) from <" + graph + "> where {?s ?p ?o}";
-        Response response = executeSparqlQuery(query, namespace, QueryResultFormat.JSON);
-        JSONObject json = new JSONObject(response.readEntity(String.class));
+        JSONObject json = new JSONObject(executeSparqlQuery(query, namespace, QueryResultFormat.JSON));
         JSONObject count = (JSONObject) json.getJSONObject("results").getJSONArray("bindings").get(0);
         return count.getJSONObject("count").getLong("value");
     }
@@ -332,51 +333,8 @@ public class BlazegraphRepRestful {
         int start = queryTmp.indexOf(" ");
         StringBuilder sb = new StringBuilder();
         sb.append(query.substring(0, start)).append(" (count(*) as ?count) ").append(query.substring(end));
-        Response response = executeSparqlQuery(sb.toString(), namespace, QueryResultFormat.JSON);
-        JSONObject json = new JSONObject(response.readEntity(String.class));
+        JSONObject json = new JSONObject(executeSparqlQuery(sb.toString(), namespace, QueryResultFormat.JSON));
         JSONObject count = (JSONObject) json.getJSONObject("results").getJSONArray("bindings").get(0);
         return count.getJSONObject("count").getLong("value");
     }
-
-    private String fetchDataImportMimeType(RDFFormat format) {
-        String mimeType;
-        if (format == RDFFormat.RDFXML) {
-            mimeType = "application/rdf+xml";
-        } else if (format == RDFFormat.N3) {
-            mimeType = "text/rdf+n3";
-        } else if (format == RDFFormat.NTRIPLES) {
-            mimeType = "text/plain";
-        } else if (format == RDFFormat.TURTLE) {
-            mimeType = "application/x-turtle";
-        } else if (format == RDFFormat.JSONLD) {
-            mimeType = "application/ld+json";
-        } else if (format == RDFFormat.TRIG) {
-            mimeType = "application/x-trig";
-        } else if (format == RDFFormat.NQUADS) {
-            mimeType = "text/x-nquads";
-        } else {
-            mimeType = null;
-        }
-        return mimeType;
-    }
-
-    private String fetchQueryResultMimeType(QueryResultFormat format) {
-        String mimetype = "";
-        switch (format) {
-            case CSV:
-                mimetype = "text/csv";
-                break;
-            case JSON:
-                mimetype = "application/json";
-                break;
-            case TSV:
-                mimetype = "text/tab-separated-values";
-                break;
-            case XML:
-                mimetype = "application/sparql-results+xml";
-                break;
-        }
-        return mimetype;
-    }
-
 }

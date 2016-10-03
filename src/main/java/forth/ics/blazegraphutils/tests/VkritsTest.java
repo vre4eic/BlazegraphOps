@@ -1,5 +1,7 @@
-package forth.ics.blazegraphutils;
+package forth.ics.blazegraphutils.tests;
 
+import forth.ics.blazegraphutils.BlazegraphRepRestful;
+import forth.ics.blazegraphutils.QueryResultFormat;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
 

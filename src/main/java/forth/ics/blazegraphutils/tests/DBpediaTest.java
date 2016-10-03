@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package forth.ics.blazegraphutils;
+package forth.ics.blazegraphutils.tests;
 
+import forth.ics.blazegraphutils.BlazegraphRepRestful;
 import org.openrdf.rio.RDFFormat;
 
 /**
