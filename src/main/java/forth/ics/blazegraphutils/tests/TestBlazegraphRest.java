@@ -7,8 +7,10 @@ package forth.ics.blazegraphutils.tests;
 
 import forth.ics.blazegraphutils.BlazegraphRepRemote;
 import forth.ics.blazegraphutils.BlazegraphRepRestful;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.Properties;
 import javax.ws.rs.core.Response;
 import org.json.JSONObject;
@@ -89,11 +91,16 @@ public class TestBlazegraphRest {
 //        ImportDatasetTest(propFile, service, folder + "/LifeWatchSyntheticDatasets/06. very large", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/vlarge", namespace, runs);
 //        ImportDatasetTest(propFile, service, folder + "/LifeWatchSyntheticDatasets/07. huge", RDFFormat.NTRIPLES, "http://lifewatchgreece.com/huge", namespace, runs);
 //        long start = System.currentTimeMillis();
-        String graph = "http://lifewatchgreece.com";
-        graph = "http://lifewatchgreece.com/vlarge";
+//        String graph = "http://lifewatchgreece.com";
+//        graph = "http://lifewatchgreece.com/vlarge";
 //        String namespaceRepo = "lifewatch";
 //        namespaceRepo = "lifewatch_large";
-        queryTest(folder, graph, runs, blaze, namespace);
+//        String response = blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://worms");
+        BufferedWriter bw = new BufferedWriter(new FileWriter("export.nt"));
+        bw.write(blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://worms"));
+        bw.close();
+
+//        queryTest(folder, graph, runs, blaze, namespace);
     }
 
     public static void queryTest(String folder, String graph, int runs, BlazegraphRepRestful blaze, String namespaceRepo) throws Exception {

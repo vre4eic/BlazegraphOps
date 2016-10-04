@@ -78,6 +78,12 @@ public class BlazegraphRepRestful {
      */
     public Response importFile(String file, RDFFormat format, String namespace, String namedGraph)
             throws ClientProtocolException, IOException {
+        String mimeType = Utils.fetchDataImportMimeType(format);
+        return importFile(file, mimeType, namespace, namedGraph);
+    }
+
+    public Response importFile(String file, String mimetypeFormat, String namespace, String namedGraph)
+            throws ClientProtocolException, IOException {
         String restURL = serviceUrl + "/namespace/" + namespace;// + "/sparql?context-uri=" + nameGraph
         // Taking into account nameSpace in the construction of the URL
         if (namespace != null) {
@@ -89,11 +95,10 @@ public class BlazegraphRepRestful {
         if (namedGraph != null) {
             restURL = restURL + "?context-uri=" + namedGraph;
         }
-        String mimeType = Utils.fetchDataImportMimeType(format);
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
-        Response response = webTarget.request().post(Entity.entity(new File(file), mimeType));// .form(form));
-        client.close();
+        Response response = webTarget.request().post(Entity.entity(new File(file), mimetypeFormat));// .form(form));
+
         return response;
     }
 
@@ -148,6 +153,30 @@ public class BlazegraphRepRestful {
 
         });
 
+    }
+
+    public String exportFile(String mimetype, String namespace, String graph) throws UnsupportedEncodingException {
+        Client client = ClientBuilder.newClient();
+        StringBuilder sb = new StringBuilder();
+        sb.append("CONSTRUCT { ?s ?p ?o } WHERE { ");
+        if (graph != null) {
+            sb.append("graph <" + graph + "> {");
+        }
+        sb.append(" hint:Query hint:constructDistinctSPO false . ?s ?p ?o } ");
+        if (graph != null) {
+            sb.append("}");
+        }
+        WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
+                .queryParam("query", URLEncoder.encode(sb.toString(), "UTF-8").replaceAll("\\+", "%20"));
+        Invocation.Builder invocationBuilder = webTarget.request(mimetype);
+        String result = invocationBuilder.get().readEntity(String.class);
+        client.close();
+        return result;
+    }
+
+    public String exportFile(RDFFormat format, String namespace, String graph) throws UnsupportedEncodingException {
+        String mimetype = Utils.fetchDataImportMimeType(format);
+        return exportFile(mimetype, namespace, graph);
     }
 
     // This is still in test 
@@ -246,11 +275,15 @@ public class BlazegraphRepRestful {
      * @throws java.io.UnsupportedEncodingException
      */
     public String executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
+        String mimetype = Utils.fetchQueryResultMimeType(format);
+        return executeSparqlQuery(queryStr, namespace, mimetype);
+    }
+
+    public String executeSparqlQuery(String queryStr, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
                 .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
-        String mimetype = Utils.fetchQueryResultMimeType(format);
-        Invocation.Builder invocationBuilder = webTarget.request(mimetype);
+        Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
         String result = invocationBuilder.get().readEntity(String.class);
         client.close();
         return result;
