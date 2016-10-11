@@ -7,11 +7,9 @@ package forth.ics.blazegraphutils.tests;
 
 import forth.ics.blazegraphutils.BlazegraphRepRemote;
 import forth.ics.blazegraphutils.BlazegraphRepRestful;
-import java.io.BufferedWriter;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.Properties;
 import javax.ws.rs.core.Response;
 import org.json.JSONObject;
 import org.json.XML;
@@ -22,6 +20,23 @@ import org.openrdf.rio.RDFFormat;
  * @author rousakis
  */
 public class TestBlazegraphRest {
+
+    private static String readData(String filename) {
+        File f = new File(filename);
+        String s = "";
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                s += (line + "\n");
+            }
+            br.close();
+        } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage() + " occured .");
+            return null;
+        }
+        return s;
+    }
 
     public static void ImportDatasetTest(String properties, String service, String filename, RDFFormat format, String graph, String namespace, int runs) throws Exception {
         long duration = 0;
@@ -96,11 +111,14 @@ public class TestBlazegraphRest {
 //        String namespaceRepo = "lifewatch";
 //        namespaceRepo = "lifewatch_large";
 //        String response = blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://worms");
-        BufferedWriter bw = new BufferedWriter(new FileWriter("export.nt"));
-        bw.write(blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://worms"));
-        bw.close();
-
+//        BufferedWriter bw = new BufferedWriter(new FileWriter("export.nt"));
+//        bw.write(blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://worms"));
+//        bw.close();
 //        queryTest(folder, graph, runs, blaze, namespace);
+        Response resp = blaze.executeUpdateSparqlQuery(
+                "insert data {graph <http://test> {<http://a3> <http://p3> <http://b3>.} }",
+                namespace);
+        System.out.println(resp.readEntity(String.class));
     }
 
     public static void queryTest(String folder, String graph, int runs, BlazegraphRepRestful blaze, String namespaceRepo) throws Exception {
@@ -111,7 +129,7 @@ public class TestBlazegraphRest {
             }
             long duration = 0;
             long min = Long.MAX_VALUE, max = 0;
-            String query = BlazegraphRepRemote.readData(file.getAbsolutePath());
+            String query = readData(file.getAbsolutePath());
             query = query.replace("[namegraph]", "<" + graph + ">");
             int i;
 //            System.out.println(query);
@@ -148,6 +166,5 @@ public class TestBlazegraphRest {
 //        blaze.deleteNamespace("efo-2_48");
 //        new BlazegraphRepRestful(service).deleteNamespace("efo-2_48");
 //        blaze.createNamespace("/config/quads.properties", "test-namespace");
-//        blaze.executeSparqlUpdateQuery("insert data into <http://test> {<http://a> rdf:type rdfs:Class. }", "test-namespace");
     }
 }

@@ -6,18 +6,15 @@
 package forth.ics.blazegraphutils;
 
 import com.bigdata.rdf.sail.webapp.SD;
-import com.bigdata.rdf.sail.webapp.client.ConnectOptions;
-import com.bigdata.rdf.sail.webapp.client.JettyResponseListener;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
-import static forth.ics.blazegraphutils.BlazegraphRepLocal.loadProperties;
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Properties;
 import org.openrdf.model.Statement;
@@ -38,36 +35,54 @@ public class BlazegraphRepRemote {
     private String serviceUrl;
     private Properties properties;
 
+    /**
+     *
+     * @param propFile
+     * @param serviceUrl
+     * @throws Exception
+     */
     public BlazegraphRepRemote(String propFile, String serviceUrl) throws Exception {
         this.serviceUrl = serviceUrl;
         repository = new RemoteRepositoryManager(serviceUrl, false);
         properties = loadProperties(propFile);
     }
 
+    /**
+     *
+     * @param propFile
+     * @param serviceUrl
+     * @throws Exception
+     */
     public BlazegraphRepRemote(Properties propFile, String serviceUrl) throws Exception {
         this.serviceUrl = serviceUrl;
         repository = new RemoteRepositoryManager(serviceUrl, false);
         properties = propFile;
     }
 
+    /**
+     * Closes a repository connection.
+     */
     public void terminate() {
         try {
             repository.close();
-
         } catch (Exception ex) {
             System.out.println("Exception: " + ex.getMessage() + " occured .");
         }
     }
 
-    /*
-     * Status request.
-     */
-    public JettyResponseListener getStatus() throws Exception {
-        final ConnectOptions opts = new ConnectOptions(this.serviceUrl + "/status");
-        opts.method = "GET";
-        return repository.doConnect(opts);
+    private static Properties loadProperties(String resource) throws IOException {
+        Properties p = new Properties();
+        InputStream is = BlazegraphRepLocal.class
+                .getResourceAsStream(resource);
+        p.load(new InputStreamReader(new BufferedInputStream(is)));
+        return p;
     }
 
+    /**
+     *
+     * @param namespace
+     * @throws Exception
+     */
     public void deleteNamespace(String namespace) throws Exception {
         if (!namespaceExists(namespace)) {
 //            System.out.println("Namespace: " + namespace + " was not found. ");
@@ -79,6 +94,11 @@ public class BlazegraphRepRemote {
 
     }
 
+    /**
+     *
+     * @param namespace
+     * @throws Exception
+     */
     public void createNamespace(String namespace) throws Exception {
         repository.createRepository(namespace, properties);
     }
@@ -102,6 +122,13 @@ public class BlazegraphRepRemote {
         return false;
     }
 
+    /**
+     *
+     * @param filename
+     * @param format
+     * @param namespace
+     * @throws Exception
+     */
     public void importFile(String filename, RDFFormat format, String namespace) throws Exception {
 //        System.out.print("Importing file: " + filename + " into namespace: " + namespace);
         BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
@@ -109,6 +136,13 @@ public class BlazegraphRepRemote {
 //        System.out.println("...DONE");
     }
 
+    /**
+     *
+     * @param folder
+     * @param format
+     * @param namespace
+     * @throws Exception
+     */
     public void importFolder(String folder, RDFFormat format, String namespace) throws Exception {
         for (File file : new File(folder).listFiles()) {
             if (!file.isDirectory()) {
@@ -121,6 +155,13 @@ public class BlazegraphRepRemote {
         }
     }
 
+    /**
+     *
+     * @param is
+     * @param format
+     * @param namespace
+     * @throws Exception
+     */
     public void loadDataFromResource(InputStream is, RDFFormat format, String namespace) throws Exception {
         if (!namespaceExists(namespace)) {
 //            System.out.println(String.format("Create namespace %s...", namespace));
@@ -164,6 +205,12 @@ public class BlazegraphRepRemote {
         }
     }
 
+    /**
+     *
+     * @param sparul
+     * @param namespace
+     * @throws Exception
+     */
     public void executeSPARULQuery(String sparul, String namespace) throws Exception {
         if (!namespaceExists(namespace)) {
             System.out.println("Namespace: " + namespace + " was not found. ");
@@ -173,6 +220,13 @@ public class BlazegraphRepRemote {
         }
     }
 
+    /**
+     *
+     * @param namespace
+     * @param graph
+     * @return
+     * @throws Exception
+     */
     public long triplesNum(String namespace, String graph) throws Exception {
         long result = 0;
         String graphClause = "";
@@ -189,6 +243,13 @@ public class BlazegraphRepRemote {
         return result;
     }
 
+    /**
+     *
+     * @param query
+     * @param namespace
+     * @return
+     * @throws Exception
+     */
     public long countSparqlResults(String query, String namespace) throws Exception {
         long result = 0;
         String queryTmp = query.toLowerCase();
@@ -207,24 +268,13 @@ public class BlazegraphRepRemote {
         return result;
     }
 
+    /**
+     *
+     * @param namespace
+     * @param graph
+     * @throws Exception
+     */
     public void clearGraphContents(String namespace, String graph) throws Exception {
         repository.getRepositoryForNamespace(namespace).prepareUpdate("CLEAR GRAPH <" + graph + ">").evaluate();
-    }
-
-    public static String readData(String filename) {
-        File f = new File(filename);
-        String s = "";
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(f));
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                s += (line + "\n");
-            }
-            br.close();
-        } catch (Exception e) {
-            System.out.println("Exception: " + e.getMessage() + " occured .");
-            return null;
-        }
-        return s;
     }
 }

@@ -21,12 +21,12 @@ import org.openrdf.rio.RDFFormat;
 
 import com.bigdata.rdf.sail.BigdataSail;
 import com.bigdata.rdf.sail.BigdataSailRepository;
-import com.bigdata.rdf.store.DataLoader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
@@ -44,6 +44,15 @@ public class BlazegraphRepLocal {
     private Repository repository;
     private RepositoryConnection con;
 
+    /**
+     * Creates a local Blazegraph repository connection.
+     *
+     * @param propFile: The Blazegraph properties file's full path which will be
+     * considered.
+     * @throws IOException: If the properties file is not found.
+     * @throws org.openrdf.repository.RepositoryException: If any error occurs
+     * upon the initialization of the repository.
+     */
     public BlazegraphRepLocal(String propFile) throws IOException, RepositoryException {
         // load journal properties from resources
         Properties props = loadProperties(propFile);
@@ -54,7 +63,7 @@ public class BlazegraphRepLocal {
         con = repository.getConnection();
     }
 
-    public static Properties loadProperties(String resource) throws IOException {
+    private static Properties loadProperties(String resource) throws IOException {
         Properties p = new Properties();
         InputStream is = BlazegraphRepLocal.class
                 .getResourceAsStream(resource);
@@ -63,16 +72,19 @@ public class BlazegraphRepLocal {
     }
 
     /**
-     * Imports a file with RDF contents within Virtuoso and the named graph
-     * given as parameter.
+     * Imports a file with RDF contents within Blazegraph and the named graph
+     * given as parameter. The file must belong in the resources folder of the
+     * project.
      *
-     * @param filename The filename which contains the data to be imported.
-     * @param format The format of the give data e.g., RDF/XML, N3, N-Triples
+     * @param resource: The resources file which contains the RDF data to be
+     * inserted.
+     * @param format: The format of the give data e.g., RDF/XML, N3, N-Triples
      * etc.
-     * @param graphDest The named graph destination.
-     * @throws Exception
+     * @param graphDest: The named graph destination.
+     * @throws IOException: If the data file cannot be found in the resources
+     * folder.
      */
-    public void loadDataFromResources(String resource, RDFFormat format, String graphDest) throws IOException, OpenRDFException {
+    public void loadDataFromResources(String resource, RDFFormat format, String graphDest) throws IOException {
         String JDK_ENTITY_EXPANSION_LIMIT = "jdk.xml.entityExpansionLimit";
         System.setProperty(JDK_ENTITY_EXPANSION_LIMIT, "0");
         System.out.println("Importing file into graph: " + graphDest);
@@ -81,22 +93,14 @@ public class BlazegraphRepLocal {
             try {
                 ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
                 InputStream is = classLoader.getResourceAsStream(resource);
-//                InputStream is = BlazegraphRepLocal.class.getResourceAsStream(resource);
                 if (is == null) {
                     throw new IOException("Could not locate resource: " + resource);
                 }
-//                Reader reader = new InputStreamReader(new BufferedInputStream(is));
-//                try {
-//                    con.add(reader, "", RDFFormat.N3, graphDest);
                 InputStreamReader in = new InputStreamReader(is, "UTF8");
                 con.add(in, "", format, new URIImpl(graphDest));
-//                } finally {
-////                    reader.close();
-//                }
                 con.commit();
             } catch (OpenRDFException ex) {
                 con.rollback();
-                throw ex;
             }
         } catch (RepositoryException ex) {
             java.util.logging.Logger.getLogger(BlazegraphRepLocal.class.getName()).log(Level.SEVERE, null, ex);
@@ -105,27 +109,51 @@ public class BlazegraphRepLocal {
         System.clearProperty(JDK_ENTITY_EXPANSION_LIMIT);
     }
 
-    public void importFile(String file, RDFFormat format, String graphDest) throws RepositoryException, IOException, OpenRDFException {
+    /**
+     * Imports a file with RDF contents within Blazegraph and the named graph
+     * given as parameter.
+     *
+     * @param file: The filename which contains the RDF data to be inserted.
+     * @param format: The format of the give data e.g., RDF/XML, N3, N-Triples
+     * etc.
+     * @param graphDest: The named graph destination.
+     * @throws java.io.IOException: If the data file cannot be found.
+     */
+    public void importFile(String file, RDFFormat format, String graphDest) throws IOException {
         String JDK_ENTITY_EXPANSION_LIMIT = "jdk.xml.entityExpansionLimit";
         System.setProperty(JDK_ENTITY_EXPANSION_LIMIT, "0");
-//        System.out.println("Importing file into graph: " + graphDest);
-        con.begin();
+        System.out.println("Importing file into graph: " + graphDest);
         try {
-            InputStreamReader reader = new InputStreamReader(new BufferedInputStream(new FileInputStream(file)), "UTF-8");
+            con.begin();
             try {
-                con.add(reader, "", format, new URIImpl(graphDest));
-            } finally {
-                reader.close();
+                InputStreamReader reader = new InputStreamReader(new BufferedInputStream(new FileInputStream(file)), "UTF-8");
+                try {
+                    con.add(reader, "", format, new URIImpl(graphDest));
+                } finally {
+                    reader.close();
+                }
+                con.commit();
+            } catch (OpenRDFException ex) {
+                con.rollback();
             }
-            con.commit();
-        } catch (OpenRDFException ex) {
-            con.rollback();
-            throw ex;
+        } catch (RepositoryException ex) {
+            java.util.logging.Logger.getLogger(BlazegraphRepLocal.class.getName()).log(Level.SEVERE, null, ex);
         }
-//        System.out.println("--- Done ---");
+        System.out.println("--- Done ---");
         System.clearProperty(JDK_ENTITY_EXPANSION_LIMIT);
     }
 
+    /**
+     * Imports a set of files with RDF data located in a folder into Blazegraph
+     * and a specific named graph. The files must be in the same format.
+     *
+     * @param folder: The folder path which contains the RDF data files.
+     * @param format: The format of the files to be inserted e.g., RDF/XML, N3,
+     * N-Triples etc.
+     * @param graphDest: The named graph destination.
+     * @throws org.openrdf.repository.RepositoryException: In case something
+     * goes wrong during the data import.
+     */
     public void importFolder(String folder, RDFFormat format, String graphDest) throws RepositoryException {
         for (File file : new File(folder).listFiles()) {
 //            System.out.println("Importing file: " + file.getName() + " into graph: " + graphDest);
@@ -136,23 +164,36 @@ public class BlazegraphRepLocal {
             } catch (Exception ex) {
                 System.out.println("Exception: " + ex.getMessage());
             }
-
 //            System.out.println("--- Done ---");
         }
         con.commit();
     }
 
     /**
-     * Clears the named graph given as parameter.
+     * Clears the contents of the named graph given as parameter.
      *
-     * @param graph The named graph to be cleared.
-     * @throws Exception
+     * @param graph: The named graph to be cleared.
+     * @throws RepositoryException: In case something goes wrong during the data
+     * deletion from the repository.
      */
-    public void clearGraphContents(String graph) throws Exception {
+    public void clearGraphContents(String graph) throws RepositoryException {
         System.out.println("Deleting contents of: " + graph);
         con.clear(new URIImpl(graph));
     }
 
+    /**
+     * Executes a SPARQL select query given as parameter.
+     *
+     * @param sparql The SPARQL query to be executed.
+     * @return A {@link TupleQueryResult} object which can be iterated to get
+     * the query results.
+     * @throws RepositoryException: In case something goes wrong during the data
+     * access from the repository.
+     * @throws MalformedQueryException: In case the query is not a syntactically
+     * correct SPARQL.
+     * @throws QueryEvaluationException: In case something goes wrong during the
+     * query evaluation.
+     */
     public TupleQueryResult executeSparqlQuery(String sparql) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
         TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, sparql);
         TupleQueryResult result = tupleQuery.evaluate();
@@ -175,16 +216,31 @@ public class BlazegraphRepLocal {
         con.export(writer, new URIImpl(graphSource));
     }
 
-    public long triplesNum(String graph) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
+    /**
+     * Returns the number of the triples contained in the named graph given as
+     * parameter.
+     *
+     * @param graph The named graph whose triples are counted.
+     * @return The number of triples.
+     */
+    public long triplesNum(String graph) {
         long result = 0;
-        TupleQueryResult res = executeSparqlQuery("select (count(*) as ?num) from <" + graph + "> where { ?s ?p ?o . }");
-        while (res.hasNext()) {
-            BindingSet set = res.next();
-            result = Long.parseLong(set.getValue("num").stringValue());
+        try {
+            TupleQueryResult res = executeSparqlQuery("select (count(*) as ?num) from <" + graph + "> where { ?s ?p ?o . }");
+            while (res.hasNext()) {
+                BindingSet set = res.next();
+                result = Long.parseLong(set.getValue("num").stringValue());
+            }
+        } catch (RepositoryException | MalformedQueryException | QueryEvaluationException ex) {
+            Logger.getLogger(BlazegraphRepLocal.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            return result;
         }
-        return result;
     }
 
+    /**
+     * Terminates the RepositoryConnection connection.
+     */
     public void terminate() {
         try {
             con.close();
@@ -194,6 +250,13 @@ public class BlazegraphRepLocal {
         }
     }
 
+    /**
+     *
+     * @param filename
+     * @param format
+     * @param graph
+     * @throws Exception
+     */
     public void importDatasetTest(String filename, RDFFormat format, String graph) throws Exception {
         clearGraphContents(graph);
         long start = System.currentTimeMillis();
@@ -211,7 +274,7 @@ public class BlazegraphRepLocal {
 
 //        blaze.importFile("C:\\RdfData\\_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "http://efo-2.48");
         System.out.println(blaze.triplesNum("http://efo-2.48"));
-        
+
 //        InputStream is = classLoader.getResourceAsStream("EFO - 2.691.owl");
 //        blaze.importFile(is, RDFFormat.RDFXML, "http://efo/2.691");
 //        System.out.println("Duration: " + (System.currentTimeMillis() - start));

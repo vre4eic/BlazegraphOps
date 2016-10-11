@@ -10,6 +10,5 @@ package forth.ics.blazegraphutils;
  * @author rousakis
  */
 public enum QueryResultFormat {
-
     CSV, JSON, TSV, XML
 }
