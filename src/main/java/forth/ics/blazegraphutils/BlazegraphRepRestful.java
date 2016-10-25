@@ -339,19 +339,20 @@ public class BlazegraphRepRestful {
     /**
      *
      * @param folder
+     * @param mimetypeFormat
      * @param format
      * @param namespace
      * @param namedgraph
      * @return
      * @throws Exception
      */
-    public long importFolder(String folder, RDFFormat format, String namespace, String namedgraph) throws Exception {
+    public long importFolder(String folder, String mimetypeFormat, String namespace, String namedgraph) throws Exception {
         String response;
         long duration = 0;
         for (File file : new File(folder).listFiles()) {
             if (!file.isDirectory()) {
                 System.out.print("file: " + file.getName() + " .... in ");
-                response = importFile(file.getAbsolutePath(), format, namespace, namedgraph).readEntity(String.class);
+                response = importFile(file.getAbsolutePath(), mimetypeFormat, namespace, namedgraph).readEntity(String.class);
                 JSONObject json = XML.toJSONObject(response);
                 long curDur = ((JSONObject) json.get("data")).getLong("milliseconds");
                 duration += curDur;
@@ -372,7 +373,7 @@ public class BlazegraphRepRestful {
      * @return The results of the submitted query w.r.t. the requested format.
      * @throws java.io.UnsupportedEncodingException
      */
-    public String executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
+    public Response executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
         String mimetype = Utils.fetchQueryResultMimeType(format);
         return executeSparqlQuery(queryStr, namespace, mimetype);
     }
@@ -390,14 +391,13 @@ public class BlazegraphRepRestful {
      * @return The results of the submitted query w.r.t. the requested format.
      * @throws UnsupportedEncodingException
      */
-    public String executeSparqlQuery(String queryStr, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
+    public Response executeSparqlQuery(String queryStr, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
                 .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
         Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
-        String result = invocationBuilder.get().readEntity(String.class);
-        client.close();
-        return result;
+        Response response = invocationBuilder.get();
+        return response;
     }
 
     /**

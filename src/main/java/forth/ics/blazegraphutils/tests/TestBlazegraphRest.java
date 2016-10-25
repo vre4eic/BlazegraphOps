@@ -5,11 +5,14 @@
  */
 package forth.ics.blazegraphutils.tests;
 
-import forth.ics.blazegraphutils.BlazegraphRepRemote;
 import forth.ics.blazegraphutils.BlazegraphRepRestful;
+import forth.ics.blazegraphutils.QueryResultFormat;
+import forth.ics.blazegraphutils.Utils;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import javax.ws.rs.core.Response;
 import org.json.JSONObject;
 import org.json.XML;
@@ -21,25 +24,9 @@ import org.openrdf.rio.RDFFormat;
  */
 public class TestBlazegraphRest {
 
-    private static String readData(String filename) {
-        File f = new File(filename);
-        String s = "";
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(f));
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                s += (line + "\n");
-            }
-            br.close();
-        } catch (Exception e) {
-            System.out.println("Exception: " + e.getMessage() + " occured .");
-            return null;
-        }
-        return s;
-    }
-
-    public static void ImportDatasetTest(String properties, String service, String filename, RDFFormat format, String graph, String namespace, int runs) throws Exception {
+    public static void ImportDatasetTest(String properties, String service, String filename, String mimetype, String graph, String namespace, int runs) throws Exception {
         long duration = 0;
+
         BlazegraphRepRestful blaze = new BlazegraphRepRestful(service);
         System.out.println("-- " + graph + " --");
         Response response;
@@ -48,9 +35,9 @@ public class TestBlazegraphRest {
             long curDur = 0;
             blaze.clearGraphContents(graph, namespace);
             if (new File(filename).isDirectory()) {
-                curDur = blaze.importFolder(filename, format, namespace, graph);
+                curDur = blaze.importFolder(filename, mimetype, namespace, graph);
             } else {
-                JSONObject json = XML.toJSONObject(blaze.importFile(filename, format, namespace, graph).readEntity(String.class));
+                JSONObject json = XML.toJSONObject(blaze.importFile(filename, mimetype, namespace, graph).readEntity(String.class));
                 curDur = ((JSONObject) json.get("data")).getLong("milliseconds");
             }
             if (min > curDur) {
@@ -111,14 +98,35 @@ public class TestBlazegraphRest {
 //        String namespaceRepo = "lifewatch";
 //        namespaceRepo = "lifewatch_large";
 //        String response = blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://worms");
-//        BufferedWriter bw = new BufferedWriter(new FileWriter("export.nt"));
-//        bw.write(blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://worms"));
+//        BufferedWriter bw = new BufferedWriter(new FileWriter(folder + "/ekt-data.nt"));
+//        bw.write(blaze.exportFile(RDFFormat.NTRIPLES, namespace, "http://ekt-data"));
 //        bw.close();
+        
+          System.out.println(blaze.executeSparqlQuery("select * where {?s ?p ?o} limit 1", namespace, QueryResultFormat.JSON).readEntity(String.class));
+
+
 //        queryTest(folder, graph, runs, blaze, namespace);
-        Response resp = blaze.executeUpdateSparqlQuery(
-                "insert data {graph <http://test> {<http://a3> <http://p3> <http://b3>.} }",
-                namespace);
-        System.out.println(resp.readEntity(String.class));
+//        Response resp = blaze.executeUpdateSparqlQuery(
+//                "insert data {graph <http://test> {<http://a3> <http://p3> <http://b3>.} }",
+//                namespace);
+//        System.out.println(resp.readEntity(String.class));
+    }
+
+    public static String readFileData(String filename) {
+        File f = new File(filename);
+        StringBuilder sb = new StringBuilder();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                sb.append(line + "\n");
+            }
+            br.close();
+        } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage() + " occured .");
+            return null;
+        }
+        return sb.toString();
     }
 
     public static void queryTest(String folder, String graph, int runs, BlazegraphRepRestful blaze, String namespaceRepo) throws Exception {
@@ -129,7 +137,7 @@ public class TestBlazegraphRest {
             }
             long duration = 0;
             long min = Long.MAX_VALUE, max = 0;
-            String query = readData(file.getAbsolutePath());
+            String query = readFileData(file.getAbsolutePath());
             query = query.replace("[namegraph]", "<" + graph + ">");
             int i;
 //            System.out.println(query);
