@@ -34,7 +34,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>forth.ics.blazegraphutils.TestBlazegraphRest</mainClass>
+                            <mainClass>forth.ics.blazegraphutils.BlazegraphRepRemote</mainClass>
                             <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>

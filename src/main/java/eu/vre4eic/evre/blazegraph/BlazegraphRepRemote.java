@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package forth.ics.blazegraphutils;
+package eu.vre4eic.evre.blazegraph;
 
 import com.bigdata.rdf.sail.webapp.SD;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
@@ -277,4 +277,14 @@ public class BlazegraphRepRemote {
     public void clearGraphContents(String namespace, String graph) throws Exception {
         repository.getRepositoryForNamespace(namespace).prepareUpdate("CLEAR GRAPH <" + graph + ">").evaluate();
     }
+
+    public static void main(String[] args) throws Exception {
+        String propFile = "/config/quads.properties";
+        String service = "http://139.91.183.46:9999/blazegraph"; //seistro
+        BlazegraphRepRemote remote = new BlazegraphRepRemote(propFile, service);
+        String namespace = "quads_repo";
+        TupleQueryResult result = remote.executeSPARQLQuery("select * from <http://ekt-data> where {?s ?p ?o} ", namespace);
+        remote.terminate();
+    }
+
 }

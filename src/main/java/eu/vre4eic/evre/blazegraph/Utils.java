@@ -3,11 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package forth.ics.blazegraphutils;
+package eu.vre4eic.evre.blazegraph;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.ws.rs.core.Response;
 import org.openrdf.rio.RDFFormat;
 
 /**
@@ -15,8 +21,6 @@ import org.openrdf.rio.RDFFormat;
  * @author rousakis
  */
 public class Utils {
-
-    
 
     public static String fetchDataImportMimeType(RDFFormat format) {
         String mimeType;
@@ -81,4 +85,16 @@ public class Utils {
         }
         return null;
     }
+
+    public static boolean saveResponseToFile(String filename, Response resp) {
+        InputStream input = resp.readEntity(InputStream.class);
+        new File(filename).delete();
+        try {
+            Files.copy(input, new File(filename).toPath());
+        } catch (IOException ex) {
+            return false;
+        }
+        return true;
+    }
+
 }

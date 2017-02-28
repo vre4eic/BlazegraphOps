@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package forth.ics.blazegraphutils;
+package eu.vre4eic.evre.blazegraph;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
