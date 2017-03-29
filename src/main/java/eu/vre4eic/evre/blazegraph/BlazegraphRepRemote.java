@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.List;
 import java.util.Properties;
 import org.openrdf.model.Statement;
 import org.openrdf.query.BindingSet;
@@ -281,9 +282,45 @@ public class BlazegraphRepRemote {
     public static void main(String[] args) throws Exception {
         String propFile = "/config/quads.properties";
         String service = "http://139.91.183.46:9999/blazegraph"; //seistro
+        service = "http://139.91.183.53:9999/blazegraph"; //seistro
         BlazegraphRepRemote remote = new BlazegraphRepRemote(propFile, service);
-        String namespace = "quads_repo";
-        TupleQueryResult result = remote.executeSPARQLQuery("select * from <http://ekt-data> where {?s ?p ?o} ", namespace);
+        String namespace = "kb";
+
+        String query = "Select *  \n"
+                + "where\n"
+                + "{ \n"
+                + "{\n"
+                + "<http://www.oeaw.ac.at/COIN/626> ?p ?o .\n"
+                + "<http://www.oeaw.ac.at/COIN/626>  rdf:type ?stype .\n"
+                + "OPTIONAL {<http://www.oeaw.ac.at/COIN/626>  \n"
+                + "<http://www.w3.org/2000/01/rdf-schema#label>  ?slabel }.\n"
+                + "OPTIONAL {?p <http://www.w3.org/2000/01/rdf-schema#label> ?plabel }.\n"
+                + "OPTIONAL {?o <http://www.w3.org/2000/01/rdf-schema#label>  ?olabel }.\n"
+                + "OPTIONAL {?o rdf:type ?otype} .\n"
+                + "} \n"
+                + "  UNION\n"
+                + "{ \n"
+                + "<http://www.oeaw.ac.at/COIN/626> ?p ?o \n"
+                + ".\n"
+                + "<http://www.oeaw.ac.at/COIN/626>  rdf:type ?stype .\n"
+                + "OPTIONAL {<http://www.oeaw.ac.at/COIN/626>  \n"
+                + "<http://www.w3.org/2000/01/rdf-schema#label>  ?slabel }.\n"
+                + " OPTIONAL{?p <http://www.w3.org/2000/01/rdf-schema#label>  ?plabel }.\n"
+                + "\n"
+                + "  \n"
+                + "FILTER(isLiteral(?o))\n"
+                + "} \n"
+                + "}";
+
+        TupleQueryResult result = remote.executeSPARQLQuery(query, namespace);
+        List<String> names = result.getBindingNames();
+
+//        while (result.hasNext()) {
+//            BindingSet set = result.next();
+//            for (String name : names) {
+//                System.out.println(name + " : " + set.getValue(name).stringValue());
+//            }
+//        }
         remote.terminate();
     }
 

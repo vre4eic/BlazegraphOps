@@ -31,6 +31,8 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.Update;
+import org.openrdf.query.UpdateExecutionException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
@@ -200,6 +202,11 @@ public class BlazegraphRepLocal {
         return result;
     }
 
+    public void executeSparqlUpdate(String sparul) throws RepositoryException, MalformedQueryException, QueryEvaluationException, UpdateExecutionException {
+        Update updateQueryQuery = (Update) con.prepareUpdate(QueryLanguage.SPARQL, sparul);
+        updateQueryQuery.execute();
+    }
+
     /**
      * Exports the contents of a named graph into a file in various formats.
      *
@@ -272,8 +279,12 @@ public class BlazegraphRepLocal {
     public static void main(String[] args) throws Exception {
         BlazegraphRepLocal blaze = new BlazegraphRepLocal("/config/quads.properties");
 
-//        blaze.importFile("C:\\RdfData\\_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, "http://efo-2.48");
-        System.out.println(blaze.triplesNum("http://efo-2.48"));
+        String graph = "http://efo-2.48";
+//        blaze.clearGraphContents(graph);
+        System.out.println(blaze.triplesNum(graph));
+//        blaze.importFile("C:\\RdfData\\_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, graph);
+//        System.out.println(blaze.triplesNum(graph));
+//        System.out.println(blaze.triplesNum("http://efo-2.48"));
 
 //        InputStream is = classLoader.getResourceAsStream("EFO - 2.691.owl");
 //        blaze.importFile(is, RDFFormat.RDFXML, "http://efo/2.691");
