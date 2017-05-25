@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import org.openrdf.rio.RDFFormat;
 
@@ -27,36 +29,36 @@ public class RousTest {
         service = "http://139.91.183.70:9999/blazegraph"; //seistro2
 //        service = "http://139.91.183.40:9999/blazegraph"; //stalone
 //        service = "http://83.212.97.61:9999/blazegraph";
-        String namespace = "localtest";
-        namespace = "ekt_data";
-//        namespace = "test";
-        namespace = "ekt-demo";
-        String graph = "http://cidoc";
-        graph = "http://ekt-data";
+        String namespace = "ekt-data";
+//        namespace = "vre-namespace";
+        String ektGraph = "http://ekt-data";
+        String rcukGraph = "http://rcuk-data";
         BlazegraphRepRestful blaze = new BlazegraphRepRestful(service);
-        String query = "SELECT ?s ?o ?p from <http://ekt-data> WHERE {{ ?s ?p ?o . ?s rdfs:label ?o. ?o bds:search 'Quadrelli' . }}";
-        System.out.println(blaze.executeSparqlQuery(query, namespace, QueryResultFormat.JSON));
+//        blaze.clearGraphContents(rcukGraph, namespace);
+//        blaze.clearGraphContents(ektGraph, namespace);
+//        blaze.exportFile(RDFFormat.TURTLE, namespace, graph)
 //        Response response = blaze.exportFile(RDFFormat.NTRIPLES, namespace, graph);
 //        InputStream input = response.readEntity(InputStream.class);
-//        Files.copy(input, new File("C:\\RdfData\\ekt_data.nt").toPath());
+//        blaze.createNamespace(propFile, namespace);
 
-//        blaze.clearGraphContents(graph, namespace);
-//        blaze.importFolder("C:\\RdfData\\EKT RDF\\passed",
-//                Utils.fetchDataImportMimeType(RDFFormat.RDFXML),
-//                namespace,
-//                graph);
-//          System.out.println(blaze.importFilePath("C:\\RdfData\\EKT\\ekt_data_aa.nt", RDFFormat.NTRIPLES, namespace, graph).readEntity(String.class));
-//        System.out.println(blaze.importFilePath("C:\\RdfData\\EKT\\ekt_data_aa.nt", RDFFormat.NTRIPLES, namespace, graph).readEntity(String.class));
-//        System.out.println(blaze.importFilePath("C:\\RdfData\\EKT\\ekt_data_ab.nt", RDFFormat.NTRIPLES, namespace, graph).readEntity(String.class));
-//        System.out.println(blaze.importFilePath("C:\\RdfData\\EKT\\ekt_data_ac.nt", RDFFormat.NTRIPLES, namespace, graph).readEntity(String.class));
-//        System.out.println(blaze.importFilePath("C:\\RdfData\\EKT\\ekt_data_ad.nt", RDFFormat.NTRIPLES, namespace, graph).readEntity(String.class));
-//        System.out.println(blaze.importFilePath("C:\\RdfData\\EKT\\ekt_data_ae.nt", RDFFormat.NTRIPLES, namespace, graph).readEntity(String.class));
-//        System.out.println(blaze.triplesNum(graph, namespace));
-//        System.out.println(blaze.executeUpdateSparqlQuery("insert data {graph <http://test> {<http://a3> <http://p3> <http://b3>.} }",
-//                "kb").readEntity(String.class));
-//        blaze.deleteNamespace("ekt-demo");
-//        blaze.createNamespace(propFile, "ekt-demo");
-//        blaze.importFilePath("C:\\RdfData\\res-cidoc_v3.2.1.rdfs", RDFFormat.RDFXML, namespace, "http://cidoc");
-//        Utils.saveResponseToFile("C:/RdfData/ekt_cerif_rdf.ttl", blaze.exportFile(RDFFormat.TURTLE, namespace, graph));
+        String folder = "C:\\RdfData\\VREData\\";
+//        blaze.importFolder(folder + "RCUK data\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+//        blaze.importFolder(folder + "RCUK data\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+//        blaze.importFolder(folder + "RCUK data\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+//        blaze.importFolder(folder + "RCUK data\\organizations", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+        //////
+//        blaze.importFolder(folder + "EKT RDF\\CERIF RDF data from EKT\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+//        blaze.importFolder(folder + "EKT RDF\\CERIF RDF data from EKT\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+//        blaze.importFolder(folder + "EKT RDF\\CERIF RDF data from EKT\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+//        blaze.importFolder(folder + "EKT RDF\\CERIF RDF data from EKT\\eaddress", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+//        blaze.importFolder(folder + "EKT RDF\\CERIF RDF data from EKT\\fundings", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+//        blaze.importFolder(folder + "EKT RDF\\CERIF RDF data from EKT\\organizationUnits", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+//        System.out.println("Added: " + (blaze.triplesNum(ektGraph, namespace)));
+//        System.out.println("Added: " + (blaze.triplesNum(rcukGraph, namespace)));
+
+//        Response resp = blaze.exportFile(RDFFormat.RDFXML, "ekt-demo", "http://test2");
+        Response resp = blaze.executeSparqlQuery("select * where {?s ?p ?o} limit 5", namespace, "text/tab-separated-values");
+        System.out.println(resp.readEntity(String.class));
+//        Utils.saveResponseToFile(folder + "ekt-data_exported.nt", resp);
     }
 }

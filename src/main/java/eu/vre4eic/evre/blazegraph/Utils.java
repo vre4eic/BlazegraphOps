@@ -38,7 +38,10 @@ public class Utils {
             mimeType = "application/x-trig";
         } else if (format == RDFFormat.NQUADS) {
             mimeType = "text/x-nquads";
-        } else {
+        } else if(format == RDFFormat.JSONLD) {
+            mimeType = "application/ld+json";
+        }
+        else {
             mimeType = null;
         }
         return mimeType;

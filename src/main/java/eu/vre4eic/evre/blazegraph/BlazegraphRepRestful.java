@@ -157,7 +157,12 @@ public class BlazegraphRepRestful {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
         Response response = webTarget.request().post(Entity.entity(fileContentStr, mimeType));// .form(form));
-        return response.readEntity(String.class);
+        if (response.getStatus() == 200) {
+            return response.readEntity(String.class);
+        } else {
+            return null;
+        }
+//        return response;
     }
 
     /**
@@ -213,6 +218,9 @@ public class BlazegraphRepRestful {
      * @throws UnsupportedEncodingException
      */
     public Response exportFile(String mimetype, String namespace, String graph) throws UnsupportedEncodingException {
+        if (mimetype == null) {
+            mimetype = Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES);
+        }
         Client client = ClientBuilder.newClient();
         StringBuilder sb = new StringBuilder();
         sb.append("CONSTRUCT { ?s ?p ?o } WHERE { ");
@@ -372,7 +380,7 @@ public class BlazegraphRepRestful {
      * @return The results of the submitted query w.r.t. the requested format.
      * @throws java.io.UnsupportedEncodingException
      */
-    public String executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
+    public Response executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
         String mimetype = Utils.fetchQueryResultMimeType(format);
         return executeSparqlQuery(queryStr, namespace, mimetype);
     }
@@ -390,13 +398,14 @@ public class BlazegraphRepRestful {
      * @return The results of the submitted query w.r.t. the requested format.
      * @throws UnsupportedEncodingException
      */
-    public String executeSparqlQuery(String queryStr, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
+    public Response executeSparqlQuery(String queryStr, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
                 .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
         Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
         Response response = invocationBuilder.get();
-        return response.readEntity(String.class);
+//        client.close();
+        return response;
     }
 
     public Response executeSparqlQueryEncoded(String queryStrEncoded, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
@@ -483,7 +492,8 @@ public class BlazegraphRepRestful {
      */
     public long triplesNum(String graph, String namespace) throws UnsupportedEncodingException {
         String query = "select (count(*) as ?count) from <" + graph + "> where {?s ?p ?o}";
-        JSONObject json = new JSONObject(executeSparqlQuery(query, namespace, QueryResultFormat.JSON));
+        Response response = executeSparqlQuery(query, namespace, QueryResultFormat.JSON);
+        JSONObject json = new JSONObject(response.readEntity(String.class));
         JSONObject count = (JSONObject) json.getJSONObject("results").getJSONArray("bindings").get(0);
         return count.getJSONObject("count").getLong("value");
     }
