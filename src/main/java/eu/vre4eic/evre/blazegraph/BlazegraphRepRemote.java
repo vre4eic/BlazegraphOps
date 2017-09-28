@@ -1,7 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright 2017 rousakis.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package eu.vre4eic.evre.blazegraph;
 
@@ -282,39 +292,40 @@ public class BlazegraphRepRemote {
     public static void main(String[] args) throws Exception {
         String propFile = "/config/quads.properties";
         String service = "http://139.91.183.46:9999/blazegraph"; //seistro
-        service = "http://139.91.183.53:9999/blazegraph"; //seistro
+        service = "http://139.91.183.70:9999/blazegraph"; //seistro
         BlazegraphRepRemote remote = new BlazegraphRepRemote(propFile, service);
-        String namespace = "kb";
+        String namespace = "ekt-data";
 
-        String query = "Select *  \n"
-                + "where\n"
-                + "{ \n"
-                + "{\n"
-                + "<http://www.oeaw.ac.at/COIN/626> ?p ?o .\n"
-                + "<http://www.oeaw.ac.at/COIN/626>  rdf:type ?stype .\n"
-                + "OPTIONAL {<http://www.oeaw.ac.at/COIN/626>  \n"
-                + "<http://www.w3.org/2000/01/rdf-schema#label>  ?slabel }.\n"
-                + "OPTIONAL {?p <http://www.w3.org/2000/01/rdf-schema#label> ?plabel }.\n"
-                + "OPTIONAL {?o <http://www.w3.org/2000/01/rdf-schema#label>  ?olabel }.\n"
-                + "OPTIONAL {?o rdf:type ?otype} .\n"
-                + "} \n"
-                + "  UNION\n"
-                + "{ \n"
-                + "<http://www.oeaw.ac.at/COIN/626> ?p ?o \n"
-                + ".\n"
-                + "<http://www.oeaw.ac.at/COIN/626>  rdf:type ?stype .\n"
-                + "OPTIONAL {<http://www.oeaw.ac.at/COIN/626>  \n"
-                + "<http://www.w3.org/2000/01/rdf-schema#label>  ?slabel }.\n"
-                + " OPTIONAL{?p <http://www.w3.org/2000/01/rdf-schema#label>  ?plabel }.\n"
-                + "\n"
-                + "  \n"
-                + "FILTER(isLiteral(?o))\n"
-                + "} \n"
-                + "}";
+        remote.deleteNamespace(namespace);
+//        
+//        String query = "Select *  \n"
+//                + "where\n"
+//                + "{ \n"
+//                + "{\n"
+//                + "<http://www.oeaw.ac.at/COIN/626> ?p ?o .\n"
+//                + "<http://www.oeaw.ac.at/COIN/626>  rdf:type ?stype .\n"
+//                + "OPTIONAL {<http://www.oeaw.ac.at/COIN/626>  \n"
+//                + "<http://www.w3.org/2000/01/rdf-schema#label>  ?slabel }.\n"
+//                + "OPTIONAL {?p <http://www.w3.org/2000/01/rdf-schema#label> ?plabel }.\n"
+//                + "OPTIONAL {?o <http://www.w3.org/2000/01/rdf-schema#label>  ?olabel }.\n"
+//                + "OPTIONAL {?o rdf:type ?otype} .\n"
+//                + "} \n"
+//                + "  UNION\n"
+//                + "{ \n"
+//                + "<http://www.oeaw.ac.at/COIN/626> ?p ?o \n"
+//                + ".\n"
+//                + "<http://www.oeaw.ac.at/COIN/626>  rdf:type ?stype .\n"
+//                + "OPTIONAL {<http://www.oeaw.ac.at/COIN/626>  \n"
+//                + "<http://www.w3.org/2000/01/rdf-schema#label>  ?slabel }.\n"
+//                + " OPTIONAL{?p <http://www.w3.org/2000/01/rdf-schema#label>  ?plabel }.\n"
+//                + "\n"
+//                + "  \n"
+//                + "FILTER(isLiteral(?o))\n"
+//                + "} \n"
+//                + "}";
 
-        TupleQueryResult result = remote.executeSPARQLQuery(query, namespace);
-        List<String> names = result.getBindingNames();
-
+//        TupleQueryResult result = remote.executeSPARQLQuery(query, namespace);
+//        List<String> names = result.getBindingNames();
 //        while (result.hasNext()) {
 //            BindingSet set = result.next();
 //            for (String name : names) {

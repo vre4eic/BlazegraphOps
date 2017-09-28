@@ -1,3 +1,18 @@
+/* 
+ * Copyright 2017 rousakis.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package eu.vre4eic.evre.blazegraph;
 
 import java.io.File;
@@ -36,6 +51,7 @@ import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import org.json.simple.parser.JSONParser;
 
 public class BlazegraphRepRestful {
 
@@ -87,7 +103,7 @@ public class BlazegraphRepRestful {
      * @return A response from the service.
      * @throws IOException
      */
-    public Response importFilePath(String file, RDFFormat format, String namespace, String namedGraph)
+    public String importFilePath(String file, RDFFormat format, String namespace, String namedGraph)
             throws IOException {
         String mimeType = Utils.fetchDataImportMimeType(format);
         return importFilePath(file, mimeType, namespace, namedGraph);
@@ -108,7 +124,7 @@ public class BlazegraphRepRestful {
      * @return A response from the service.
      * @throws IOException
      */
-    public Response importFilePath(String file, String mimetypeFormat, String namespace, String namedGraph)
+    public String importFilePath(String file, String mimetypeFormat, String namespace, String namedGraph)
             throws IOException {
         String restURL = serviceUrl + "/namespace/" + namespace;// + "/sparql?context-uri=" + nameGraph
         // Taking into account nameSpace in the construction of the URL
@@ -124,7 +140,11 @@ public class BlazegraphRepRestful {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
         Response response = webTarget.request().post(Entity.entity(new File(file), mimetypeFormat));// .form(form));
-        return response;
+        if (response.getStatus() == 200) {
+            return xmlImportToJson(response.readEntity(String.class));
+        } else {
+            return response.readEntity(String.class);
+        }
     }
 
     /**
@@ -158,11 +178,15 @@ public class BlazegraphRepRestful {
         WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
         Response response = webTarget.request().post(Entity.entity(fileContentStr, mimeType));// .form(form));
         if (response.getStatus() == 200) {
-            return response.readEntity(String.class);
+            return xmlImportToJson(response.readEntity(String.class));
         } else {
             return null;
         }
-//        return response;
+    }
+
+    private String xmlImportToJson(String xml) {
+        JSONObject json = XML.toJSONObject(xml);
+        return json.toString();
     }
 
     /**
@@ -354,16 +378,21 @@ public class BlazegraphRepRestful {
      * @throws Exception
      */
     public long importFolder(String folder, String mimetypeFormat, String namespace, String namedgraph) throws Exception {
-        String response;
+        String responseString;
         long duration = 0;
         for (File file : new File(folder).listFiles()) {
             if (!file.isDirectory()) {
                 System.out.print("file: " + file.getName() + " .... in ");
-                response = importFilePath(file.getAbsolutePath(), mimetypeFormat, namespace, namedgraph).readEntity(String.class);
-                JSONObject json = XML.toJSONObject(response);
-                long curDur = ((JSONObject) json.get("data")).getLong("milliseconds");
-                duration += curDur;
-                System.out.println(curDur + " ms");
+                responseString = importFilePath(file.getAbsolutePath(), mimetypeFormat, namespace, namedgraph);
+                JSONParser parser = new JSONParser();
+                try {
+                    org.json.simple.JSONObject json = (org.json.simple.JSONObject) parser.parse(responseString);
+                    long curDur = (long) ((org.json.simple.JSONObject) json.get("data")).get("milliseconds");
+                    duration += curDur;
+                    System.out.println(curDur + " ms");
+                } catch (Exception ex) {
+                    System.out.println("FAILED");
+                }
             }
         }
         return duration;
@@ -517,7 +546,7 @@ public class BlazegraphRepRestful {
         int start = queryTmp.indexOf(" ");
         StringBuilder sb = new StringBuilder();
         sb.append(query.substring(0, start)).append(" (count(*) as ?count) ").append(query.substring(end));
-        JSONObject json = new JSONObject(executeSparqlQuery(sb.toString(), namespace, QueryResultFormat.JSON));
+        JSONObject json = new JSONObject(executeSparqlQuery(sb.toString(), namespace, QueryResultFormat.JSON).readEntity(String.class));
         JSONObject count = (JSONObject) json.getJSONObject("results").getJSONArray("bindings").get(0);
         return count.getJSONObject("count").getLong("value");
     }

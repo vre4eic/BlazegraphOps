@@ -1,7 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright 2017 rousakis.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package eu.vre4eic.evre.blazegraph;
 
@@ -25,8 +35,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.json.JSONObject;
+import org.openrdf.model.Literal;
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
@@ -49,15 +63,23 @@ public class BlazegraphRepLocal {
     /**
      * Creates a local Blazegraph repository connection.
      *
-     * @param propFile: The Blazegraph properties file's full path which will be
-     * considered.
+     * @param embedPropsFile: The Blazegraph properties file's full path which
+     * will be considered.
      * @throws IOException: If the properties file is not found.
      * @throws org.openrdf.repository.RepositoryException: If any error occurs
      * upon the initialization of the repository.
      */
-    public BlazegraphRepLocal(String propFile) throws IOException, RepositoryException {
+    public BlazegraphRepLocal(String embedPropsFile) throws IOException, RepositoryException {
         // load journal properties from resources
-        Properties props = loadProperties(propFile);
+        Properties props = loadProperties(embedPropsFile);
+        // instantiate a sail
+        BigdataSail sail = new BigdataSail(props);
+        repository = new BigdataSailRepository(sail); // create a Sesame repository
+        repository.initialize();
+        con = repository.getConnection();
+    }
+
+    public BlazegraphRepLocal(Properties props) throws IOException, RepositoryException {
         // instantiate a sail
         BigdataSail sail = new BigdataSail(props);
         repository = new BigdataSailRepository(sail); // create a Sesame repository
@@ -157,6 +179,7 @@ public class BlazegraphRepLocal {
      * goes wrong during the data import.
      */
     public void importFolder(String folder, RDFFormat format, String graphDest) throws RepositoryException {
+        System.out.println("Importing Folder: " + folder + " into graph: " + graphDest);
         for (File file : new File(folder).listFiles()) {
 //            System.out.println("Importing file: " + file.getName() + " into graph: " + graphDest);
             InputStreamReader in;
@@ -166,9 +189,10 @@ public class BlazegraphRepLocal {
             } catch (Exception ex) {
                 System.out.println("Exception: " + ex.getMessage());
             }
-//            System.out.println("--- Done ---");
         }
         con.commit();
+        System.out.println("--- Done ---");
+
     }
 
     /**
@@ -181,6 +205,7 @@ public class BlazegraphRepLocal {
     public void clearGraphContents(String graph) throws RepositoryException {
         System.out.println("Deleting contents of: " + graph);
         con.clear(new URIImpl(graph));
+        con.commit();
     }
 
     /**
@@ -246,6 +271,66 @@ public class BlazegraphRepLocal {
     }
 
     /**
+     * Inserts a (URI) triple into a named graph.
+     *
+     * @param s The subject URI of the triple.
+     * @param p The predicate URI of the triple.
+     * @param o The object URI triple.
+     * @param graph The named graph into which the triple will be inserted.
+     */
+    public void addTriple(String s, String p, String o, String graph) {
+        URI sub = repository.getValueFactory().createURI(s);
+        URI pred = repository.getValueFactory().createURI(p);
+        URI obj = repository.getValueFactory().createURI(o);
+        URI g = repository.getValueFactory().createURI(graph);
+        try {
+            con.add(sub, pred, obj, g);
+        } catch (RepositoryException ex) {
+            System.out.println("Exception: " + ex.getMessage() + " occured .");
+        }
+    }
+
+    /**
+     * Inserts a (Literal) triple into a named graph.
+     *
+     * @param s The subject URI of the triple.
+     * @param p The predicate URI of the triple.
+     * @param o The string literal object of the triple.
+     * @param graph The named graph into which the triple will be inserted.
+     */
+    public void addLitTriple(String s, String p, String o, String graph) {
+        URI sub = repository.getValueFactory().createURI(s);
+        URI pred = repository.getValueFactory().createURI(p);
+        Literal obj = repository.getValueFactory().createLiteral(o);
+        URI g = repository.getValueFactory().createURI(graph);
+        try {
+            con.add(sub, pred, obj, g);
+        } catch (RepositoryException ex) {
+            System.out.println("Exception: " + ex.getMessage() + " occured .");
+        }
+    }
+
+    /**
+     * Inserts a (Literal) triple into a named graph.
+     *
+     * @param s The subject URI of the triple.
+     * @param p The predicate URI of the triple.
+     * @param o The double literal object of the triple.
+     * @param graph The named graph into which the triple will be inserted.
+     */
+    public void addLitTriple(String s, String p, double o, String graph) {
+        URI sub = repository.getValueFactory().createURI(s);
+        URI pred = repository.getValueFactory().createURI(p);
+        Literal obj = repository.getValueFactory().createLiteral(o);
+        URI g = repository.getValueFactory().createURI(graph);
+        try {
+            con.add(sub, pred, obj, g);
+        } catch (RepositoryException ex) {
+            System.out.println("Exception: " + ex.getMessage() + " occured .");
+        }
+    }
+
+    /**
      * Terminates the RepositoryConnection connection.
      */
     public void terminate() {
@@ -255,6 +340,34 @@ public class BlazegraphRepLocal {
         } catch (RepositoryException ex) {
             System.out.println("Exception: " + ex.getMessage() + " occured .");
         }
+    }
+
+    /**
+     * Returns the number of results for a given SPARQL query issued on a
+     * specific namespace.
+     *
+     * @param query: The SPARQL query which results will be counted.
+     * @param namespace: The namespace repository in which the SPARQL query will
+     * be submitted.
+     * @return: The number of query results.
+     * @throws Exception
+     */
+    public long countSparqlResults(String query) throws Exception {
+        long result = 0;
+        String queryTmp = query.toLowerCase();
+        int end = queryTmp.indexOf("from");
+        if (end == -1) {
+            end = queryTmp.indexOf("where");
+        }
+        int start = queryTmp.indexOf(" ");
+        StringBuilder sb = new StringBuilder();
+        sb.append(query.substring(0, start)).append(" (count(*) as ?triples) ").append(query.substring(end));
+        TupleQueryResult res = executeSparqlQuery(sb.toString());
+        while (res.hasNext()) {
+            result = Long.parseLong(res.next().getValue("triples").stringValue());
+        }
+        res.close();
+        return result;
     }
 
     /**

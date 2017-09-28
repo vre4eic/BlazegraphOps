@@ -19,6 +19,6 @@ package eu.vre4eic.evre.blazegraph;
  *
  * @author rousakis
  */
-public enum QueryResultFormat {
-    CSV, JSON, TSV, XML
+public class NewClass {
+    
 }
