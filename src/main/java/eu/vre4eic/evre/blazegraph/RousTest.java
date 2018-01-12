@@ -15,15 +15,8 @@
  */
 package eu.vre4eic.evre.blazegraph;
 
-import eu.vre4eic.evre.blazegraph.BlazegraphRepRestful;
-import eu.vre4eic.evre.blazegraph.QueryResultFormat;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import org.openrdf.rio.RDFFormat;
 
@@ -48,27 +41,30 @@ public class RousTest {
         String eposGraph = "http://epos-data";
         String envriGraph = "http://envri-data";
         BlazegraphRepRestful blaze = new BlazegraphRepRestful(service);
-//        blaze.clearGraphContents(rcukGraph, namespace);
 //        blaze.clearGraphContents(ektGraph, namespace);
-//        blaze.createNamespace(propFile, namespace);
-        String folder = "C:\\RdfData\\VREData\\";
+        blaze.createNamespace(propFile, namespace);
+        String folder = "E:\\RdfData\\VREData\\";
 //        blaze.clearGraphContents(rcukGraph, namespace);
-//        blaze.importFolder(folder + "RCUK\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
-//        blaze.importFolder(folder + "RCUK\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
-//        blaze.importFolder(folder + "RCUK\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+        blaze.importFolder(folder + "RCUK\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+        blaze.importFolder(folder + "RCUK\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+        blaze.importFolder(folder + "RCUK\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
 //        blaze.importFolder(folder + "RCUK\\organizations", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
-//        blaze.importFilePath(folder + "classification.ttl", RDFFormat.TURTLE, namespace, rcukGraph);
-//        blaze.importFilePath(folder + "5providers.rdf", RDFFormat.RDFXML, namespace, rcukGraph);
+        blaze.importFolder(folder + "RCUK\\organizations_with_synthetic_geo_data", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
+        blaze.importFilePath(folder + "classification.ttl", RDFFormat.TURTLE, namespace, rcukGraph);
+        blaze.importFilePath(folder + "5providers.rdf", RDFFormat.RDFXML, namespace, rcukGraph);
+        blaze.importFilePath(folder + "RCUK\\classification1.ntriples", RDFFormat.NTRIPLES, namespace, rcukGraph);
         //////
-//        blaze.importFolder(folder + "EKT RDF\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
-//        blaze.importFolder(folder + "EKT RDF\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
-//        blaze.importFolder(folder + "EKT RDF\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
-//        blaze.importFolder(folder + "EKT RDF\\eaddress", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
-//        blaze.importFolder(folder + "EKT RDF\\fundings", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\eaddress", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\fundings", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
 //        blaze.importFolder(folder + "EKT RDF\\organizationUnits", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
-//        blaze.importFolder(folder + "EKT RDF", Utils.fetchDataImportMimeType(RDFFormat.TURTLE), namespace, ektGraph);
-//        blaze.importFilePath(folder + "classification.ttl", RDFFormat.TURTLE, namespace, ektGraph);
-//        blaze.importFilePath(folder + "5providers.rdf", RDFFormat.RDFXML, namespace, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\organizations_with_synthetic_geo_data", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, ektGraph);
+        blaze.importFolder(folder + "EKT RDF", Utils.fetchDataImportMimeType(RDFFormat.TURTLE), namespace, ektGraph);
+        blaze.importFilePath(folder + "classification.ttl", RDFFormat.TURTLE, namespace, ektGraph);
+        blaze.importFilePath(folder + "5providers.rdf", RDFFormat.RDFXML, namespace, ektGraph);
+        blaze.importFilePath(folder + "EKT RDF\\classification1.ntriples", RDFFormat.NTRIPLES, namespace, ektGraph);
         ///
 //        blaze.clearGraphContents(frisGraph, namespace);
 //        blaze.importFolder(folder + "FRIS\\organizations", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, frisGraph);
@@ -77,6 +73,7 @@ public class RousTest {
 //        blaze.importFolder(folder + "FRIS\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, frisGraph);
 //        blaze.importFilePath(folder + "classification.ttl", RDFFormat.TURTLE, namespace, frisGraph);
 //        blaze.importFilePath(folder + "5providers.rdf", RDFFormat.RDFXML, namespace, frisGraph);
+//        blaze.importFilePath(folder + "FRIS\\classification1.ntriples", RDFFormat.NTRIPLES, namespace, frisGraph);
         ///////
 ////        blaze.clearGraphContents(eposGraph, namespace);
 ////        blaze.clearGraphContents(envriGraph, namespace);
@@ -93,6 +90,35 @@ public class RousTest {
 //        Utils.saveResponseToFile(folder + "epos-data_exported.nt", resp);
 //        calcStats(blaze, eposGraph, namespace);
 //        calcStats(blaze, envriGraph, namespace);
+
+        String query = "select distinct ?relation\n"
+                + "from <http://ekt-data> where {\n"
+                + "{\n"
+                + "    ?target_inst a <http://eurocris.org/ontology/cerif#Person>.\n"
+                + "    ?target_inst ?relation [a <http://eurocris.org/ontology/cerif#Project>].\n"
+                + "} UNION {\n "
+                + "    ?target_inst a <http://eurocris.org/ontology/cerif#Person>.\n"
+                + "    ?target_inst ?relation [a <http://eurocris.org/ontology/cerif#OrganisationUnit>].\n"
+                + "} UNION {\n "
+                + "    ?target_inst a <http://eurocris.org/ontology/cerif#Person>.\n"
+                + "    ?target_inst ?relation [a <http://eurocris.org/ontology/cerif#Publication>].\n"
+                + "}\n"
+                + "}";
+
+//        Response resp = blaze.executeSparqlQuery(query, namespace, QueryResultFormat.CSV);
+//        System.out.println(resp.readEntity(String.class));
+//        
+//        BlazegraphRepRemote blazeRem = new BlazegraphRepRemote("", service);
+//        TupleQueryResult res = blazeRem.executeSPARQLQuery(query, namespace);
+//        HashMap<String, String> results = new HashMap<>();
+//        while (res.hasNext()) {
+//            BindingSet set = res.next();
+//            String relation = URLDecoder.decode(set.getValue("relation").stringValue(), "UTF-8");
+//            String relatedEntity = URLDecoder.decode(set.getValue("relation").stringValue(), "UTF-8");
+//            results.put(relation.substring(relation.lastIndexOf("/") + 1), relatedEntity);
+//        }
+//        System.out.println(results);
+//        blazeRem.terminate();
     }
 
     private static void calcStats(BlazegraphRepRestful blaze, String ektGraph, String namespace) throws Exception {

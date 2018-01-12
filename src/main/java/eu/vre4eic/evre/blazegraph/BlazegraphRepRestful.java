@@ -52,14 +52,23 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.json.simple.parser.JSONParser;
+import org.openrdf.model.Literal;
+import org.openrdf.model.URI;
+import org.openrdf.repository.RepositoryException;
 
 public class BlazegraphRepRestful {
 
     private String serviceUrl;
     private Client clientPool;
+    private String namespace;
 
     public BlazegraphRepRestful(String serviceUrl) {
         this.serviceUrl = serviceUrl;
+    }
+
+    public BlazegraphRepRestful(String serviceUrl, String namespace) {
+        this.serviceUrl = serviceUrl;
+        this.namespace = namespace;
     }
 
     public BlazegraphRepRestful(String serviceUrl, Client clientPool) {
@@ -73,6 +82,10 @@ public class BlazegraphRepRestful {
                 .getResourceAsStream(resource);
         p.load(new InputStreamReader(new BufferedInputStream(is)));
         return p;
+    }
+
+    public String getNamespace() {
+        return namespace;
     }
 
     public String getServiceUrl() {
@@ -109,6 +122,12 @@ public class BlazegraphRepRestful {
         return importFilePath(file, mimeType, namespace, namedGraph);
     }
 
+    public String importFilePath(String file, RDFFormat format, String namedGraph)
+            throws IOException {
+        String mimeType = Utils.fetchDataImportMimeType(format);
+        return importFilePath(file, mimeType, namespace, namedGraph);
+    }
+
     /**
      * Imports an RDF like file on the server using post synchronously.
      *
@@ -125,6 +144,32 @@ public class BlazegraphRepRestful {
      * @throws IOException
      */
     public String importFilePath(String file, String mimetypeFormat, String namespace, String namedGraph)
+            throws IOException {
+        String restURL = serviceUrl + "/namespace/" + namespace;// + "/sparql?context-uri=" + nameGraph
+        // Taking into account nameSpace in the construction of the URL
+        if (namespace != null) {
+            restURL = serviceUrl + "/namespace/" + namespace + "/sparql";
+        } else {
+            restURL = serviceUrl + "/sparql";
+        }
+        // Taking into account nameGraph in the construction of the URL
+        if (namedGraph != null) {
+            restURL = restURL + "?context-uri=" + namedGraph;
+        }
+        System.out.println("Importing file: " + file + " into graph: " + namedGraph);
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
+        long start = System.currentTimeMillis();
+        Response response = webTarget.request().post(Entity.entity(new File(file), mimetypeFormat));// .form(form));
+        System.out.println("--- Duration: " + (System.currentTimeMillis() - start) + " ---");
+        if (response.getStatus() == 200) {
+            return xmlImportToJson(response.readEntity(String.class));
+        } else {
+            return response.readEntity(String.class);
+        }
+    }
+
+    public String importFilePath(String file, String mimetypeFormat, String namedGraph)
             throws IOException {
         String restURL = serviceUrl + "/namespace/" + namespace;// + "/sparql?context-uri=" + nameGraph
         // Taking into account nameSpace in the construction of the URL
@@ -180,7 +225,7 @@ public class BlazegraphRepRestful {
         if (response.getStatus() == 200) {
             return xmlImportToJson(response.readEntity(String.class));
         } else {
-            return null;
+            return response.readEntity(String.class);
         }
     }
 
@@ -367,6 +412,16 @@ public class BlazegraphRepRestful {
         return response;
     }
 
+    public Response clearGraphContents(String graph) throws UnsupportedEncodingException {
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
+                .queryParam("c", URLEncoder.encode("<" + graph + ">", "UTF-8").replaceAll("\\+", "%20"));
+        Invocation.Builder invocationBuilder = webTarget.request();
+        Response response = invocationBuilder.delete();
+        client.close();
+        return response;
+    }
+
     /**
      *
      * @param folder
@@ -382,14 +437,14 @@ public class BlazegraphRepRestful {
         long duration = 0;
         for (File file : new File(folder).listFiles()) {
             if (!file.isDirectory()) {
-                System.out.print("file: " + file.getName() + " .... in ");
+//                System.out.print("file: " + file.getName() + " .... in ");
                 responseString = importFilePath(file.getAbsolutePath(), mimetypeFormat, namespace, namedgraph);
                 JSONParser parser = new JSONParser();
                 try {
                     org.json.simple.JSONObject json = (org.json.simple.JSONObject) parser.parse(responseString);
                     long curDur = (long) ((org.json.simple.JSONObject) json.get("data")).get("milliseconds");
                     duration += curDur;
-                    System.out.println(curDur + " ms");
+//                    System.out.println(curDur + " ms");
                 } catch (Exception ex) {
                     System.out.println("FAILED");
                 }
@@ -410,6 +465,11 @@ public class BlazegraphRepRestful {
      * @throws java.io.UnsupportedEncodingException
      */
     public Response executeSparqlQuery(String queryStr, String namespace, QueryResultFormat format) throws UnsupportedEncodingException {
+        String mimetype = Utils.fetchQueryResultMimeType(format);
+        return executeSparqlQuery(queryStr, namespace, mimetype);
+    }
+
+    public Response executeSparqlQuery(String queryStr, QueryResultFormat format) throws UnsupportedEncodingException {
         String mimetype = Utils.fetchQueryResultMimeType(format);
         return executeSparqlQuery(queryStr, namespace, mimetype);
     }
@@ -437,7 +497,26 @@ public class BlazegraphRepRestful {
         return response;
     }
 
+    public Response executeSparqlQuery(String queryStr, String mimetypeFormat) throws UnsupportedEncodingException {
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
+                .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
+        Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
+        Response response = invocationBuilder.get();
+//        client.close();
+        return response;
+    }
+
     public Response executeSparqlQueryEncoded(String queryStrEncoded, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
+                .queryParam("query", queryStrEncoded);
+        Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
+        Response response = invocationBuilder.get();
+        return response;
+    }
+
+    public Response executeSparqlQueryEncoded(String queryStrEncoded, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
                 .queryParam("query", queryStrEncoded);
@@ -456,8 +535,24 @@ public class BlazegraphRepRestful {
      * @return The response of the update request
      * @throws java.io.UnsupportedEncodingException
      */
-    public Response executeUpdateSparqlQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
+    public Response executeSparqlUpdateQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
         String restURL = serviceUrl + "/namespace/" + namespace;
+        // Taking into account nameSpace in the construction of the URL
+        if (namespace != null) {
+            restURL = serviceUrl + "/namespace/" + namespace + "/sparql";
+        } else {
+            restURL = serviceUrl + "/sparql";
+        }
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(restURL);
+        String contentType = "application/sparql-update";
+        Invocation.Builder invocationBuilder = webTarget.request(contentType);
+        Response response = invocationBuilder.post(Entity.entity(queryStr, contentType));
+        return response;
+    }
+
+    public Response executeSparqlUpdateQuery(String queryStr) throws UnsupportedEncodingException {
+        String restURL;
         // Taking into account nameSpace in the construction of the URL
         if (namespace != null) {
             restURL = serviceUrl + "/namespace/" + namespace + "/sparql";
@@ -481,7 +576,7 @@ public class BlazegraphRepRestful {
      * be submitted.
      * @throws java.io.UnsupportedEncodingException
      */
-    public void executeAsyncUpdateSparqlQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
+    public void executeAsyncSparqlUpdateQuery(String queryStr, String namespace) throws UnsupportedEncodingException {
         String restURL = serviceUrl + "/namespace/" + namespace;
         // Taking into account nameSpace in the construction of the URL
         if (namespace != null) {
@@ -520,6 +615,14 @@ public class BlazegraphRepRestful {
      * @throws UnsupportedEncodingException
      */
     public long triplesNum(String graph, String namespace) throws UnsupportedEncodingException {
+        String query = "select (count(*) as ?count) from <" + graph + "> where {?s ?p ?o}";
+        Response response = executeSparqlQuery(query, namespace, QueryResultFormat.JSON);
+        JSONObject json = new JSONObject(response.readEntity(String.class));
+        JSONObject count = (JSONObject) json.getJSONObject("results").getJSONArray("bindings").get(0);
+        return count.getJSONObject("count").getLong("value");
+    }
+
+    public long triplesNum(String graph) throws UnsupportedEncodingException {
         String query = "select (count(*) as ?count) from <" + graph + "> where {?s ?p ?o}";
         Response response = executeSparqlQuery(query, namespace, QueryResultFormat.JSON);
         JSONObject json = new JSONObject(response.readEntity(String.class));

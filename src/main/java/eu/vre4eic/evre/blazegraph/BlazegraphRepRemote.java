@@ -222,7 +222,7 @@ public class BlazegraphRepRemote {
      * @param namespace
      * @throws Exception
      */
-    public void executeSPARULQuery(String sparul, String namespace) throws Exception {
+    public void executeUpdateSparqlQuery(String sparul, String namespace) throws Exception {
         if (!namespaceExists(namespace)) {
             System.out.println("Namespace: " + namespace + " was not found. ");
         } else {
@@ -238,7 +238,7 @@ public class BlazegraphRepRemote {
      * @return
      * @throws Exception
      */
-    public long triplesNum(String namespace, String graph) throws Exception {
+    public long triplesNum(String graph, String namespace) throws Exception {
         long result = 0;
         String graphClause = "";
         if (graph != null) {
@@ -285,18 +285,22 @@ public class BlazegraphRepRemote {
      * @param graph
      * @throws Exception
      */
-    public void clearGraphContents(String namespace, String graph) throws Exception {
+    public void clearGraphContents(String graph, String namespace) throws Exception {
         repository.getRepositoryForNamespace(namespace).prepareUpdate("CLEAR GRAPH <" + graph + ">").evaluate();
     }
 
     public static void main(String[] args) throws Exception {
         String propFile = "/config/quads.properties";
         String service = "http://139.91.183.46:9999/blazegraph"; //seistro
-        service = "http://139.91.183.70:9999/blazegraph"; //seistro
+        service = "http://139.91.183.70:9999/blazegraph"; //seistro2
+        service = "http://83.212.99.102:9999/blazegraph";
+        
         BlazegraphRepRemote remote = new BlazegraphRepRemote(propFile, service);
         String namespace = "ekt-data";
+        namespace = "mediawiki";
+        remote.createNamespace(namespace);
 
-        remote.deleteNamespace(namespace);
+//        remote.deleteNamespace(namespace);
 //        
 //        String query = "Select *  \n"
 //                + "where\n"

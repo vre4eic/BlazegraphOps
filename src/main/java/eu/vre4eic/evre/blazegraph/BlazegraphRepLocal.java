@@ -187,7 +187,7 @@ public class BlazegraphRepLocal {
                 in = new InputStreamReader(new FileInputStream(file), "UTF8");
                 con.add(in, "", format, new URIImpl(graphDest));
             } catch (Exception ex) {
-                System.out.println("Exception: " + ex.getMessage());
+                System.out.println("Exception in file: " + file.getName() + " -> " + ex.getMessage());
             }
         }
         con.commit();
@@ -392,13 +392,14 @@ public class BlazegraphRepLocal {
     public static void main(String[] args) throws Exception {
         BlazegraphRepLocal blaze = new BlazegraphRepLocal("/config/quads.properties");
 
-        String graph = "http://efo-2.48";
+//        String graph = "http://efo-2.48";
+//        blaze.importFile("E:\\RdfData\\_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, graph);
+//        blaze.importFile("E:\\RdfData\\ekt_cerif_rdf.ttl", RDFFormat.TURTLE, "http://ekt");
+//        System.out.println(blaze.triplesNum("http://ekt"));
 //        blaze.clearGraphContents(graph);
-        System.out.println(blaze.triplesNum(graph));
-//        blaze.importFile("C:\\RdfData\\_diachron_efo-2.48.nt", RDFFormat.NTRIPLES, graph);
+//        blaze.clearGraphContents("http://ekt");
 //        System.out.println(blaze.triplesNum(graph));
 //        System.out.println(blaze.triplesNum("http://efo-2.48"));
-
 //        InputStream is = classLoader.getResourceAsStream("EFO - 2.691.owl");
 //        blaze.importFile(is, RDFFormat.RDFXML, "http://efo/2.691");
 //        System.out.println("Duration: " + (System.currentTimeMillis() - start));
@@ -410,6 +411,38 @@ public class BlazegraphRepLocal {
 //        blaze.importDatasetTest("input/Fishbase", RDFFormat.TURTLE, "http://fishbase");
 //        blaze.importDatasetTest("input/Worms", RDFFormat.TURTLE, "http://worms");
 //        blaze.importDatasetTest("input/lifewatch5a.nt_fixed", RDFFormat.NTRIPLES, "http://lifewatch");       
+        ///////////////////////////////////
+        String ektGraph = "http://ekt-data";
+        String rcukGraph = "http://rcuk-data";
+        String frisGraph = "http://fris-data";
+        String eposGraph = "http://epos-data";
+        String envriGraph = "http://envri-data";
+
+//        blaze.clearGraphContents(ektGraph, namespace);
+//        blaze.createNamespace(propFile, namespace);
+        String folder = "E:\\RdfData\\VREData\\";
+//        blaze.clearGraphContents(rcukGraph, namespace);
+        blaze.importFolder(folder + "RCUK\\persons", RDFFormat.NTRIPLES, rcukGraph);
+        blaze.importFolder(folder + "RCUK\\projects", RDFFormat.NTRIPLES, rcukGraph);
+        blaze.importFolder(folder + "RCUK\\publications", RDFFormat.NTRIPLES, rcukGraph);
+//        blaze.importFolder(folder + "RCUK\\organizations", RDFFormat.NTRIPLES), namespace, rcukGraph);
+        blaze.importFolder(folder + "RCUK\\organizations_with_synthetic_geo_data", RDFFormat.NTRIPLES, rcukGraph);
+        blaze.importFile(folder + "classification.ttl", RDFFormat.TURTLE, rcukGraph);
+        blaze.importFile(folder + "5providers.rdf", RDFFormat.RDFXML, rcukGraph);
+        blaze.importFile(folder + "RCUK\\classification1.ntriples", RDFFormat.NTRIPLES, rcukGraph);
+        //////
+        blaze.importFolder(folder + "EKT RDF\\persons", RDFFormat.NTRIPLES, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\projects", RDFFormat.NTRIPLES, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\publications", RDFFormat.NTRIPLES, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\eaddress", RDFFormat.NTRIPLES, ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\fundings", RDFFormat.NTRIPLES, ektGraph);
+//        blaze.importFolder(folder + "EKT RDF\\organizationUnits", RDFFormat.NTRIPLES), ektGraph);
+        blaze.importFolder(folder + "EKT RDF\\organizations_with_synthetic_geo_data", RDFFormat.NTRIPLES, ektGraph);
+        blaze.importFolder(folder + "EKT RDF", RDFFormat.TURTLE, ektGraph);
+        blaze.importFile(folder + "classification.ttl", RDFFormat.TURTLE, ektGraph);
+        blaze.importFile(folder + "5providers.rdf", RDFFormat.RDFXML, ektGraph);
+        blaze.importFile(folder + "EKT RDF\\classification1.ntriples", RDFFormat.NTRIPLES, ektGraph);
+
         blaze.terminate();
     }
 }
