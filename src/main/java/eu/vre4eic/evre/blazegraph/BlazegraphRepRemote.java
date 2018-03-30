@@ -15,6 +15,8 @@
  */
 package eu.vre4eic.evre.blazegraph;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.bigdata.rdf.sail.webapp.SD;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
@@ -26,15 +28,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import org.openrdf.model.Statement;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -56,6 +64,10 @@ public class BlazegraphRepRemote {
         this.serviceUrl = serviceUrl;
         repository = new RemoteRepositoryManager(serviceUrl, false);
         properties = loadProperties(propFile);
+    }
+
+    public BlazegraphRepRemote(String serviceUrl) {
+        repository = new RemoteRepositoryManager(serviceUrl, false);
     }
 
     /**
@@ -200,9 +212,12 @@ public class BlazegraphRepRemote {
      * @param graphSource The named graph whose data will be exported.
      * @throws Exception
      */
-    public void exportToFile(String filename, RDFFormat format, String graphSource) throws Exception {
+    public void exportToFile(String filename, RDFFormat format, String namespace, String graphSource) throws Exception {
         System.out.println("Exporting graph: " + graphSource.toString());
         RDFWriter writer = Rio.createWriter(format, new OutputStreamWriter(new FileOutputStream(new File(filename))));
+        RepositoryConnection conn = repository.getRepositoryForNamespace(namespace).getBigdataSailRemoteRepository().getConnection();
+        conn.export(writer, new URIImpl(graphSource));
+        conn.close();
     }
 
     public TupleQueryResult executeSPARQLQuery(String sparql, String namespace) throws Exception {
@@ -248,8 +263,7 @@ public class BlazegraphRepRemote {
 
         TupleQueryResult res = executeSPARQLQuery(query, namespace);
         while (res.hasNext()) {
-            BindingSet set = res.next();
-            result = Long.parseLong(set.getValue("num").stringValue());
+            result = Long.parseLong(res.next().getValue("num").stringValue());
         }
         return result;
     }
@@ -290,15 +304,37 @@ public class BlazegraphRepRemote {
     }
 
     public static void main(String[] args) throws Exception {
+        Set<String> loggers = new HashSet<>(Arrays.asList("org.apache.http",
+                "org.openrdf.query.resultio",
+                "org.openrdf.rio",
+                "org.eclipse.jetty.util",
+                "org.eclipse.jetty.util.component",
+                "org.eclipse.jetty.io",
+                "org.eclipse.jetty.client.util",
+                "org.eclipse.jetty.client",
+                "org.eclipse.jetty.http"));
+        for (String log : loggers) {
+            Logger logger = (Logger) LoggerFactory.getLogger(log);
+            logger.setLevel(Level.INFO);
+            logger.setAdditive(false);
+        }
         String propFile = "/config/quads.properties";
         String service = "http://139.91.183.46:9999/blazegraph"; //seistro
         service = "http://139.91.183.70:9999/blazegraph"; //seistro2
-        service = "http://83.212.99.102:9999/blazegraph";
-        
-        BlazegraphRepRemote remote = new BlazegraphRepRemote(propFile, service);
-        String namespace = "ekt-data";
-        namespace = "mediawiki";
-        remote.createNamespace(namespace);
+//        service = "http://83.212.99.102:9999/blazegraph";
+        service = "http://139.91.183.97:9999/blazegraph"; //celsius
+
+        String ektGraph = "http://ekt-data";
+        String rcukGraph = "http://rcuk-data";
+        String frisGraph = "http://fris-data";
+        String eposGraph = "http://epos-data";
+        String envriGraph = "http://envri-data";
+        String servicesGraph = "http://epos-data-services";
+
+        BlazegraphRepRemote remote = new BlazegraphRepRemote(service);
+        String namespace = "vre4eic";
+//        namespace = "mediawiki";
+//        remote.createNamespace(namespace);
 
 //        remote.deleteNamespace(namespace);
 //        
@@ -327,7 +363,6 @@ public class BlazegraphRepRemote {
 //                + "FILTER(isLiteral(?o))\n"
 //                + "} \n"
 //                + "}";
-
 //        TupleQueryResult result = remote.executeSPARQLQuery(query, namespace);
 //        List<String> names = result.getBindingNames();
 //        while (result.hasNext()) {
@@ -336,6 +371,12 @@ public class BlazegraphRepRemote {
 //                System.out.println(name + " : " + set.getValue(name).stringValue());
 //            }
 //        }
+//        remote.exportToFile("vre_data/ekt-data.nt", RDFFormat.NTRIPLES, namespace, ektGraph);
+//        remote.exportToFile("vre_data/rcuk-data.nt", RDFFormat.NTRIPLES, namespace, rcukGraph);
+//        remote.exportToFile("vre_data/fris-data.nt", RDFFormat.NTRIPLES, namespace, frisGraph);
+//        remote.exportToFile("vre_data/epos-data.nt", RDFFormat.NTRIPLES, namespace, eposGraph);
+        remote.exportToFile("vre_data/envri-data.nt", RDFFormat.NTRIPLES, namespace, envriGraph);
+
         remote.terminate();
     }
 

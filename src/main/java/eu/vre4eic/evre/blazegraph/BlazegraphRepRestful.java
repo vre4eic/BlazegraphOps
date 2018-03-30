@@ -48,30 +48,34 @@ import java.util.concurrent.Future;
  */
 import com.bigdata.rdf.sail.webapp.SD;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
+import com.bigdata.rdf.store.AbstractTripleStore;
 import java.io.BufferedInputStream;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.json.simple.parser.JSONParser;
-import org.openrdf.model.Literal;
-import org.openrdf.model.URI;
-import org.openrdf.repository.RepositoryException;
 
 public class BlazegraphRepRestful {
 
     private String serviceUrl;
     private Client clientPool;
     private String namespace;
+    private int timeout;
+    private boolean logging = true;
 
     public BlazegraphRepRestful(String serviceUrl) {
+        this.timeout = 0;
         this.serviceUrl = serviceUrl;
     }
 
     public BlazegraphRepRestful(String serviceUrl, String namespace) {
+        this.timeout = 0;
         this.serviceUrl = serviceUrl;
         this.namespace = namespace;
     }
 
     public BlazegraphRepRestful(String serviceUrl, Client clientPool) {
+        this.timeout = 0;
         this.serviceUrl = serviceUrl;
         this.clientPool = clientPool;
     }
@@ -82,6 +86,14 @@ public class BlazegraphRepRestful {
                 .getResourceAsStream(resource);
         p.load(new InputStreamReader(new BufferedInputStream(is)));
         return p;
+    }
+
+    public void setLogging(boolean logging) {
+        this.logging = logging;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
     }
 
     public String getNamespace() {
@@ -156,12 +168,16 @@ public class BlazegraphRepRestful {
         if (namedGraph != null) {
             restURL = restURL + "?context-uri=" + namedGraph;
         }
-        System.out.println("Importing file: " + file + " into graph: " + namedGraph);
+        if (logging) {
+            System.out.println("Importing file: " + file + " into graph: " + namedGraph);
+        }
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
         long start = System.currentTimeMillis();
         Response response = webTarget.request().post(Entity.entity(new File(file), mimetypeFormat));// .form(form));
-        System.out.println("--- Duration: " + (System.currentTimeMillis() - start) + " ---");
+        if (logging) {
+            System.out.println("--- Duration: " + (System.currentTimeMillis() - start) + " ---");
+        }
         if (response.getStatus() == 200) {
             return xmlImportToJson(response.readEntity(String.class));
         } else {
@@ -222,7 +238,8 @@ public class BlazegraphRepRestful {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(restURL).queryParam("context-uri", namedGraph);
         Response response = webTarget.request().post(Entity.entity(fileContentStr, mimeType));// .form(form));
-        if (response.getStatus() == 200) {
+        int status = response.getStatus();
+        if (status == 200) {
             return xmlImportToJson(response.readEntity(String.class));
         } else {
             return response.readEntity(String.class);
@@ -354,15 +371,30 @@ public class BlazegraphRepRestful {
      * can be found here:
      * <a href="https://wiki.blazegraph.com/wiki/index.php/Configuring_Blazegraph">https://wiki.blazegraph.com/wiki/index.php/Configuring_Blazegraph</a>.
      *
-     * @param propFile: The file path the configuration properties file located
-     * in the resources of the project.
+     * @param resourcePropFile: The file path the configuration properties file
+     * located in the resources of the project.
      * @param namespace: The namespace name which will be created.
      * @return: true if there does not exist any namespace with the given name,
      * false otherwise.
      * @throws Exception
      */
-    public boolean createNamespace(String propFile, String namespace) throws Exception {
-        Properties properties = loadProperties(propFile);
+    public boolean createNamespaceFromResources(String resourcePropFile, String namespace) throws Exception {
+        Properties properties = loadProperties(resourcePropFile);
+        //////////////
+//        properties.setProperty(AbstractTripleStore.Options.VOCABULARY_CLASS, "com.bigdata.rdf.vocab.MyVocabularyVersion1");
+//        properties.setProperty(AbstractTripleStore.Options.GEO_SPATIAL_DATATYPE_CONFIG, "{\"config\":{\"uri\":\"http://my-lat-lon-starttime-endtime-dt\",\"fields\":[{\"valueType\":\"DOUBLE\",\"multiplier\":\"100000\",\"serviceMapping\":\"LATITUDE\"},{\"valueType\":\"DOUBLE\",\"multiplier\":\"100000\",\"serviceMapping\":\"LONGITUDE\"},{\"valueType\":\"LONG\",\"serviceMapping\":\"starttime\"},{\"valueType\":\"LONG\",\"serviceMapping\":\"endtime\"}]}}");
+        if (!namespaceExists(namespace)) {
+            RemoteRepositoryManager repository = new RemoteRepositoryManager(serviceUrl, false);
+            repository.createRepository(namespace, properties);
+            repository.close();
+            return true;
+        }
+        return false;
+    }
+
+    public boolean createNamespaceFromFile(String propFile, String namespace) throws Exception {
+        Properties properties = new Properties();
+        properties.load(new FileReader(propFile));
         if (!namespaceExists(namespace)) {
             RemoteRepositoryManager repository = new RemoteRepositoryManager(serviceUrl, false);
             repository.createRepository(namespace, properties);
@@ -432,22 +464,26 @@ public class BlazegraphRepRestful {
      * @return
      * @throws Exception
      */
-    public long importFolder(String folder, String mimetypeFormat, String namespace, String namedgraph) throws Exception {
+    public long importFolder(String folder, String mimetypeFormat, String namespace, String namedgraph, String extFilter) {
         String responseString;
         long duration = 0;
         for (File file : new File(folder).listFiles()) {
             if (!file.isDirectory()) {
 //                System.out.print("file: " + file.getName() + " .... in ");
-                responseString = importFilePath(file.getAbsolutePath(), mimetypeFormat, namespace, namedgraph);
-                JSONParser parser = new JSONParser();
+                if (extFilter != null && !file.getName().endsWith(extFilter)) {
+                    continue;
+                }
                 try {
+                    responseString = importFilePath(file.getAbsolutePath(), mimetypeFormat, namespace, namedgraph);
+                    JSONParser parser = new JSONParser();
                     org.json.simple.JSONObject json = (org.json.simple.JSONObject) parser.parse(responseString);
                     long curDur = (long) ((org.json.simple.JSONObject) json.get("data")).get("milliseconds");
                     duration += curDur;
 //                    System.out.println(curDur + " ms");
                 } catch (Exception ex) {
-                    System.out.println("FAILED");
+                    System.out.println("-- PROBLEM PARSING: " + file.getPath() + " --");
                 }
+
             }
         }
         return duration;
@@ -490,7 +526,8 @@ public class BlazegraphRepRestful {
     public Response executeSparqlQuery(String queryStr, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
-                .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
+                .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"))
+                .queryParam("timeout", "" + this.timeout);
         Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
         Response response = invocationBuilder.get();
 //        client.close();
@@ -500,7 +537,8 @@ public class BlazegraphRepRestful {
     public Response executeSparqlQuery(String queryStr, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
-                .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"));
+                .queryParam("query", URLEncoder.encode(queryStr, "UTF-8").replaceAll("\\+", "%20"))
+                .queryParam("timeout", "" + this.timeout);;
         Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
         Response response = invocationBuilder.get();
 //        client.close();
@@ -510,7 +548,8 @@ public class BlazegraphRepRestful {
     public Response executeSparqlQueryEncoded(String queryStrEncoded, String namespace, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
-                .queryParam("query", queryStrEncoded);
+                .queryParam("query", queryStrEncoded)
+                .queryParam("timeout", "" + this.timeout);
         Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
         Response response = invocationBuilder.get();
         return response;
@@ -519,7 +558,8 @@ public class BlazegraphRepRestful {
     public Response executeSparqlQueryEncoded(String queryStrEncoded, String mimetypeFormat) throws UnsupportedEncodingException {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(serviceUrl + "/namespace/" + namespace + "/sparql")
-                .queryParam("query", queryStrEncoded);
+                .queryParam("query", queryStrEncoded)
+                .queryParam("timeout", "" + this.timeout);
         Invocation.Builder invocationBuilder = webTarget.request(mimetypeFormat);
         Response response = invocationBuilder.get();
         return response;
