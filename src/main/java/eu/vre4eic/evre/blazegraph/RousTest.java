@@ -69,7 +69,7 @@ public class RousTest {
 
         String folder = "E:\\RdfData\\VREData\\";
 //        blaze.clearGraphContents(rcukGraph, namespace);
-//        blaze.importFilePath(folder + "services(1).rdf", RDFFormat.RDFXML, namespace, servicesGraph);
+        blaze.importFilePath(folder + "services(1).rdf", RDFFormat.RDFXML, namespace, servicesGraph);
 //        blaze.importFolder(folder + "RCUK\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
 //        blaze.importFolder(folder + "RCUK\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
 //        blaze.importFolder(folder + "RCUK\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
@@ -126,11 +126,11 @@ public class RousTest {
 //        calcStats(blaze, eposGraph, namespace);
 //        calcStats(blaze, envriGraph, namespace);
 //
-        System.out.println(blaze.importFilePath("blaze_geodata\\geo_ekt.nt", RDFFormat.NTRIPLES, namespace, ektGraph));
-        System.out.println(blaze.importFilePath("blaze_geodata\\geo_rcuk.nt", RDFFormat.NTRIPLES, namespace, rcukGraph));
-        System.out.println(blaze.importFilePath("blaze_geodata\\geo_fris.nt", RDFFormat.NTRIPLES, namespace, frisGraph));
-        System.out.println(blaze.importFilePath("blaze_geodata\\geo_epos.nt", RDFFormat.NTRIPLES, namespace, eposGraph));
-        System.out.println(blaze.importFilePath("blaze_geodata\\geo_envri.nt", RDFFormat.NTRIPLES, namespace, envriGraph));
+//        System.out.println(blaze.importFilePath("blaze_geodata\\geo_ekt.nt", RDFFormat.NTRIPLES, namespace, ektGraph));
+//        System.out.println(blaze.importFilePath("blaze_geodata\\geo_rcuk.nt", RDFFormat.NTRIPLES, namespace, rcukGraph));
+//        System.out.println(blaze.importFilePath("blaze_geodata\\geo_fris.nt", RDFFormat.NTRIPLES, namespace, frisGraph));
+//        System.out.println(blaze.importFilePath("blaze_geodata\\geo_epos.nt", RDFFormat.NTRIPLES, namespace, eposGraph));
+//        System.out.println(blaze.importFilePath("blaze_geodata\\geo_envri.nt", RDFFormat.NTRIPLES, namespace, envriGraph));
 //
 //        blaze.clearGraphContents("http://vre/classifications", namespace);
 //        System.out.println(blaze.importFilePath("C:\\Users\\rousakis\\AppData\\Roaming\\Skype\\My Skype Received Files\\classifications\\CERIF_VRE4EIC_Terms.ntriples",
