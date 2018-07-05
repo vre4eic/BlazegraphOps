@@ -48,7 +48,6 @@ import java.util.concurrent.Future;
  */
 import com.bigdata.rdf.sail.webapp.SD;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
-import com.bigdata.rdf.store.AbstractTripleStore;
 import java.io.BufferedInputStream;
 import java.io.FileReader;
 import java.io.InputStream;

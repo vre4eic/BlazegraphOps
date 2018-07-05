@@ -23,6 +23,7 @@ import java.util.HashSet;
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import javax.ws.rs.core.Response;
 import org.openrdf.rio.RDFFormat;
 
 /**
@@ -69,7 +70,7 @@ public class RousTest {
 
         String folder = "E:\\RdfData\\VREData\\";
 //        blaze.clearGraphContents(rcukGraph, namespace);
-        blaze.importFilePath(folder + "services(1).rdf", RDFFormat.RDFXML, namespace, servicesGraph);
+//        blaze.importFilePath(folder + "services(1).rdf", RDFFormat.RDFXML, namespace, servicesGraph);
 //        blaze.importFolder(folder + "RCUK\\persons", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
 //        blaze.importFolder(folder + "RCUK\\projects", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
 //        blaze.importFolder(folder + "RCUK\\publications", Utils.fetchDataImportMimeType(RDFFormat.NTRIPLES), namespace, rcukGraph);
@@ -119,10 +120,10 @@ public class RousTest {
 //        System.out.println(blaze.importFilePath("date_rcuk.nt", RDFFormat.NTRIPLES, namespace, rcukGraph));
 //        System.out.println(blaze.importFilePath("date_ekt.nt", RDFFormat.NTRIPLES, namespace, ektGraph));
         ////
-//        Response resp = blaze.exportFile(RDFFormat.NTRIPLES, "epos-data", null);
+        Response resp = blaze.exportFile(RDFFormat.NTRIPLES, "vre4eic", "http://vre/classifications");
 //        Response resp = blaze.executeSparqlQuery("select * where {?s ?p ?o} limit 5", namespace, "text/tab-separated-values");
 //        System.out.println(resp.readEntity(String.class));
-//        Utils.saveResponseToFile(folder + "epos-data_exported.nt", resp);
+        Utils.saveResponseToFile(folder + "classifications.nt", resp);
 //        calcStats(blaze, eposGraph, namespace);
 //        calcStats(blaze, envriGraph, namespace);
 //
